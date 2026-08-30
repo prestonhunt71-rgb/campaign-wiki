@@ -1,23 +1,18 @@
 # Campaign Wiki
 
-Campaign Wiki is a Foundry VTT v13 module that organizes a campaign record around what happened at the table. The normal GM workflow is to create a Session, select or create its Arc, add featured campaign content through family-specific selectors, and write a synopsis. The Wiki derives appearances, Arc/Metaplot collections, geography, affiliations, and Automatic publication.
+Campaign Wiki is a Foundry VTT v13 module built around one universal Article model. Articles are organized by parent relationships rather than exposed database types, and one Article may have several parents without being duplicated.
 
-## Highlights
+## Navigation and workflow
 
-- Seven canonical types: Actor, Scene, Image, Area, Affiliation, Arc, and Session.
-- Home-first application with persistent **+ New Arc** and **+ New Session** controls for GMs.
-- Conceptual collapsed navigation: Metaplots, Arcs, Places, People, and Images. Storage types and Sessions are not exposed as a giant database tree.
-- Contextual creation; there is no global generic article button.
-- Foundry-backed Actors and Scenes are imported only when selected. Typing a new name creates a minimal Foundry document and linked Wiki stub.
-- DNPC ownership is a relationship inferred from definitive Foundry/legacy data; DNPC Actors remain NPCs and appear beneath their owner.
-- Wiki-owned descriptions and metadata; live synchronization of Foundry name and artwork.
-- Stable Wiki IDs and rename-preserved aliases.
-- Exact, first-occurrence synopsis links with explicit collision remediation.
-- Derived Arc/Metaplot, Affiliation, and geographic collections.
-- Automatic, Always Public, and Always GM Only visibility with reference-safe player projection.
-- GM-only Needs Attention workflow and historical previous-appearance suggestions.
-- Previewed legacy migration with automatic backup and remediation for uncertain mappings.
-- World-isolated JSON package export/import with automatic pre-import backup.
+Home is followed by five fixed roots: Metaplots, Arcs, Places, People, and Images. Everything beneath them is an Article. Metaplots is hidden when empty, all branches begin collapsed on each open, and expansion state lasts for that open window.
+
+- **New Article** uses one universal form with progressive parent-path selectors.
+- Every Article requires at least one immediate parent and may have several.
+- **New Child Article** creates a title-only placeholder beneath the current Article and adds it to **Needs Actioning**.
+- New Foundry Actors and Scenes automatically create placeholders beneath People and Places respectively.
+- Token art, source name, and source imagery synchronize without deleting Wiki text or relationships.
+- Dates on descendants provide derived date ranges for their parents.
+- Visibility supports Automatic, Always Public, and Always GM Only.
 
 ## Installation
 
@@ -27,28 +22,24 @@ In Foundry's **Add-on Modules** tab, use this manifest URL:
 https://github.com/prestonhunt71-rgb/campaign-wiki/releases/latest/download/module.json
 ```
 
-Enable Campaign Wiki in a world, then open it using the book icon in the sidebar or **Configure Settings → Module Settings → Campaign Wiki**. Campaign Wiki always begins on Home, including a reopened pop-out.
+Enable Campaign Wiki in a world, then open it using the book icon in the sidebar or **Configure Settings → Module Settings → Campaign Wiki**.
 
 ## Data safety
 
-Campaign Wiki stores one dataset in the current Foundry world's settings. Deleting a Wiki Actor or Scene never deletes its Foundry document. Broken Foundry links retain Wiki history. Deleting an Arc deletes its Sessions but not associated campaign articles. Deleting a Metaplot preserves its child Arcs and Sessions.
+Campaign Wiki stores one dataset in the current Foundry world's settings. Deleting a Wiki Article never deletes its Foundry Actor or Scene.
 
-Version 2 detects the legacy Campaign Wiki overlay before making changes. A migration requires GM confirmation, creates a download backup first, migrates definitive mappings, and records uncertain items for remediation.
-
-If an early v2 migration produced empty-looking articles, use **Module Settings → Recover Legacy Campaign Wiki**. Recovery merges the preserved legacy world setting—or a selected legacy JSON backup—into existing v2 records. It does not duplicate or delete Foundry Actors/Scenes. It restores narrative content, art, classifications, team/employer Affiliations, DNPC ownership, Arcs, Sessions, and featured Session content, and downloads the current v2 database before changing it.
-
-Version 2.0.3 reruns recovery version 2 once for earlier v2 worlds. It reconciles legacy-derived Affiliation assignments rather than accumulating them. Article editing presents filterable Affiliation checkboxes so every assignment can be reviewed and removed directly.
+The v2-to-v3 migration is deliberately conservative. It requires GM confirmation, downloads the untouched v2 database first, retains the old world setting and legacy overlay, preserves existing text and images, and converts only exact structural relationships. The migration creates optional organizer Articles such as Heroes, Affiliations, Equipment, and Session Art; these are ordinary editable Articles, not hard-coded categories.
 
 ## Development
 
-The Foundry integration is in `scripts/campaign-wiki.js`. Pure data and derivation logic is in `scripts/core.js`, allowing it to be tested outside Foundry.
+The Foundry integration is in `scripts/campaign-wiki.js`. The unified graph and migration logic is in `scripts/unified-core.js`, allowing it to be tested outside Foundry.
 
 ```sh
 npm test
 ```
 
-The test suite covers stable Session-derived collections, geography, affiliations, Arc/Metaplot inheritance, derived dates, publication overrides, Metaplot secrecy, exact synopsis linking, ambiguity handling, visibility-safe player rendering, historical enrichment, alias-search boundaries, deletion, and integrity validation.
+The test suite includes multi-parent paths, cycle prevention, placeholders, derived dates, conservative migration, and the complete v2 regression suite.
 
 ## Release
 
-The module uses semantic versions. Version 2.0.0 is the schema-breaking Campaign Wiki redesign. Installable releases include both `module.json` and `campaign-wiki-vX.Y.Z.zip` assets.
+The module uses semantic versions. Version 3.0.0 introduces the unified, multi-parent Article schema. Installable releases include both `module.json` and `campaign-wiki-vX.Y.Z.zip` assets.
