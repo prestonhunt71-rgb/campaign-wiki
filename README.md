@@ -6,8 +6,10 @@ Campaign Wiki is a Foundry VTT v13 module that organizes a campaign record aroun
 
 - Seven canonical types: Actor, Scene, Image, Area, Affiliation, Arc, and Session.
 - Home-first application with persistent **+ New Arc** and **+ New Session** controls for GMs.
+- Conceptual collapsed navigation: Metaplots, Arcs, Places, People, and Images. Storage types and Sessions are not exposed as a giant database tree.
 - Contextual creation; there is no global generic article button.
 - Foundry-backed Actors and Scenes are imported only when selected. Typing a new name creates a minimal Foundry document and linked Wiki stub.
+- DNPC ownership is a relationship inferred from definitive Foundry/legacy data; DNPC Actors remain NPCs and appear beneath their owner.
 - Wiki-owned descriptions and metadata; live synchronization of Foundry name and artwork.
 - Stable Wiki IDs and rename-preserved aliases.
 - Exact, first-occurrence synopsis links with explicit collision remediation.
@@ -34,6 +36,8 @@ Campaign Wiki stores one dataset in the current Foundry world's settings. Deleti
 Version 2 detects the legacy Campaign Wiki overlay before making changes. A migration requires GM confirmation, creates a download backup first, migrates definitive mappings, and records uncertain items for remediation.
 
 If an early v2 migration produced empty-looking articles, use **Module Settings → Recover Legacy Campaign Wiki**. Recovery merges the preserved legacy world setting—or a selected legacy JSON backup—into existing v2 records. It does not duplicate or delete Foundry Actors/Scenes. It restores narrative content, art, classifications, team/employer Affiliations, DNPC ownership, Arcs, Sessions, and featured Session content, and downloads the current v2 database before changing it.
+
+Version 2.0.3 reruns recovery version 2 once for earlier v2 worlds. It reconciles legacy-derived Affiliation assignments rather than accumulating them. Article editing presents filterable Affiliation checkboxes so every assignment can be reviewed and removed directly.
 
 ## Development
 

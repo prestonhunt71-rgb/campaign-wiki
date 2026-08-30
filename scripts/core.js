@@ -178,6 +178,7 @@ export function deriveAttention(database) {
   for (const entity of Object.values(database.entities)) {
     if (["actor", "scene"].includes(entity.type) && entity.source?.missing) add(ATTENTION.MISSING_SOURCE, entity.id);
     if (entity.type === "actor" && entity.incomplete) add(ATTENTION.INCOMPLETE_ACTOR, entity.id);
+    if (entity.type === "actor" && entity.dnpcAmbiguous) add(ATTENTION.DNPC, entity.id);
     if (entity.type === "scene" && entity.incomplete) add(ATTENTION.INCOMPLETE_SCENE, entity.id);
     if (entity.type === "image" && entity.incomplete) add(ATTENTION.INCOMPLETE_IMAGE, entity.id);
     if (entity.type === "area" && entity.incomplete) add(ATTENTION.INCOMPLETE_AREA, entity.id);

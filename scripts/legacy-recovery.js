@@ -55,14 +55,15 @@ export function recoverLegacy(current, overlay, { sourceDocument = () => null } 
 
   // Teams and employers become Affiliations; profession/archetype taxonomy is discarded.
   const affiliationTags=[...tags.values()].filter(tag=>tag.taxonomyRole==="team"||tag.parentId==="tag-by-employer");
-  for(const tag of affiliationTags){let affiliation=bySemantic.get(`affiliation:${slug(tag.name)}`);if(!affiliation){affiliation=putEntity(data,{id:makeId("affiliation"),type:"affiliation",name:tag.name,description:"",visibility:VISIBILITY.AUTOMATIC,aliases:[],affiliationIds:[],incomplete:false});stats.affiliationsCreated++;index(affiliation);}bySemantic.set(tag.id,affiliation);}
-  for(const [oldId,old] of records){const actor=byLegacy.get(oldId);if(actor?.type!=="actor")continue;const ids=text(old.tagIds).split(/\s+/);actor.affiliationIds=[...new Set([...actor.affiliationIds,...ids.map(id=>bySemantic.get(id)?.id).filter(Boolean)])];}
+  for(const tag of affiliationTags){let affiliation=bySemantic.get(`affiliation:${slug(tag.name)}`);if(!affiliation){affiliation=putEntity(data,{id:makeId("affiliation"),type:"affiliation",name:tag.name,description:"",visibility:VISIBILITY.AUTOMATIC,aliases:[],affiliationIds:[],incomplete:false,legacyTagId:tag.id});stats.affiliationsCreated++;index(affiliation);}affiliation.legacyTagId??=tag.id;bySemantic.set(tag.id,affiliation);}
+  const legacyNames=new Set(affiliationTags.map(tag=>slug(tag.name)));
+  for(const [oldId,old] of records){const actor=byLegacy.get(oldId);if(actor?.type!=="actor")continue;const ids=text(old.tagIds).split(/\s+/),mapped=ids.map(id=>bySemantic.get(id)?.id).filter(Boolean),preserved=(actor.affiliationIds??[]).filter(id=>{const affiliation=data.entities[id];return affiliation?.type==="affiliation"&&!affiliation.legacyTagId&&!legacyNames.has(slug(affiliation.name));});actor.affiliationIds=[...new Set([...preserved,...mapped])];}
 
   // Stable legacy targets often use type-name slugs rather than Foundry UUIDs.
   const resolveTarget = target => byLegacy.get(target)||bySemantic.get(target)||bySemantic.get(`actor:${slug(String(target).replace(/^actor-/,""))}`)||bySemantic.get(`scene:${slug(String(target).replace(/^scene-/,""))}`)||bySemantic.get(`image:${slug(String(target).replace(/^manual-/,""))}`);
   for(const [oldId,old] of records){const source=byLegacy.get(oldId);if(!source)continue;for(const relation of relationships(old.relationships)){const target=resolveTarget(relation.target);if(source.type==="session"&&target&&["featured-actors","featured-locations","link-to","linked-from"].includes(relation.type)){const before=source.memberIds.length;source.memberIds=[...new Set([...source.memberIds,target.id])];if(source.memberIds.length>before)stats.sessionsLinked++;}else if(["actor","scene","image"].includes(source.type)&&target?.type==="session"&&["featured-as-actor-in","featured-as-location-in","linked-from"].includes(relation.type)){const before=target.memberIds.length;target.memberIds=[...new Set([...target.memberIds,source.id])];if(target.memberIds.length>before)stats.sessionsLinked++;}else if(source.type==="actor"&&relation.type==="dnpc-of"&&target?.type==="actor"){source.dnpcOwnerId=target.id;stats.dnpcsLinked++;}}
   }
-  data.migration ??= {};data.migration.repairVersion=1;data.migration.repairedAt=new Date().toISOString();data.migration.repairStats=stats;data.migration.remediation ??=[];
+  data.migration ??= {};data.migration.repairVersion=2;data.migration.repairedAt=new Date().toISOString();data.migration.repairStats=stats;data.migration.remediation ??=[];
   stats.remediation=data.migration.remediation.length;
   return { database:data, stats };
 }
