@@ -33,6 +33,8 @@ Campaign Wiki stores one dataset in the current Foundry world's settings. Deleti
 
 Version 2 detects the legacy Campaign Wiki overlay before making changes. A migration requires GM confirmation, creates a download backup first, migrates definitive mappings, and records uncertain items for remediation.
 
+If an early v2 migration produced empty-looking articles, use **Module Settings → Recover Legacy Campaign Wiki**. Recovery merges the preserved legacy world setting—or a selected legacy JSON backup—into existing v2 records. It does not duplicate or delete Foundry Actors/Scenes. It restores narrative content, art, classifications, team/employer Affiliations, DNPC ownership, Arcs, Sessions, and featured Session content, and downloads the current v2 database before changing it.
+
 ## Development
 
 The Foundry integration is in `scripts/campaign-wiki.js`. Pure data and derivation logic is in `scripts/core.js`, allowing it to be tested outside Foundry.

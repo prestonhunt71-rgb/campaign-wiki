@@ -2,7 +2,7 @@
   "id": "campaign-wiki",
   "title": "Campaign Wiki",
   "description": "A self-organizing campaign record built around Sessions, Arcs, contextual articles, derived collections, and visibility-safe player access.",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "authors": [
     {
       "name": "Campaign Wiki"
@@ -21,5 +21,5 @@
   ],
   "url": "https://github.com/prestonhunt71-rgb/campaign-wiki",
   "manifest": "https://github.com/prestonhunt71-rgb/campaign-wiki/releases/latest/download/module.json",
-  "download": "https://github.com/prestonhunt71-rgb/campaign-wiki/releases/download/v2.0.1/campaign-wiki-v2.0.1.zip"
+  "download": "https://github.com/prestonhunt71-rgb/campaign-wiki/releases/download/v2.0.2/campaign-wiki-v2.0.2.zip"
 }

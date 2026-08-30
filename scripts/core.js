@@ -177,11 +177,11 @@ export function deriveAttention(database) {
   const add = (kind, entityId, detail = {}) => items.push({ id: `${kind}:${entityId}:${detail.key ?? ""}`, kind, entityId, ...detail });
   for (const entity of Object.values(database.entities)) {
     if (["actor", "scene"].includes(entity.type) && entity.source?.missing) add(ATTENTION.MISSING_SOURCE, entity.id);
-    if (entity.type === "actor" && (!entity.description || !entity.source)) add(ATTENTION.INCOMPLETE_ACTOR, entity.id);
-    if (entity.type === "scene" && (!entity.description || !entity.source)) add(ATTENTION.INCOMPLETE_SCENE, entity.id);
-    if (entity.type === "image" && (!entity.art || !entity.description)) add(ATTENTION.INCOMPLETE_IMAGE, entity.id);
-    if (entity.type === "area" && (!entity.areaType || !entity.description)) add(ATTENTION.INCOMPLETE_AREA, entity.id);
-    if (entity.type === "affiliation" && !entity.description) add(ATTENTION.INCOMPLETE_AFFILIATION, entity.id);
+    if (entity.type === "actor" && entity.incomplete) add(ATTENTION.INCOMPLETE_ACTOR, entity.id);
+    if (entity.type === "scene" && entity.incomplete) add(ATTENTION.INCOMPLETE_SCENE, entity.id);
+    if (entity.type === "image" && entity.incomplete) add(ATTENTION.INCOMPLETE_IMAGE, entity.id);
+    if (entity.type === "area" && entity.incomplete) add(ATTENTION.INCOMPLETE_AREA, entity.id);
+    if (entity.type === "affiliation" && entity.incomplete) add(ATTENTION.INCOMPLETE_AFFILIATION, entity.id);
     if (entity.type === "session") {
       if (!entity.art) add(ATTENTION.MISSING_SESSION_ART, entity.id);
       if (!entity.synopsis) add(ATTENTION.MISSING_SYNOPSIS, entity.id);
