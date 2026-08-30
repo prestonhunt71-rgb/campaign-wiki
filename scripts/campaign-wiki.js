@@ -99,7 +99,12 @@ async function migrateLegacy(overlay){const data=emptyDatabase(game.world.id),id
 }
 
 async function syncSources(){if(!game.user.isGM)return;const data=database();let changed=false;for(const item of Object.values(data.entities)){if(!["actor","scene"].includes(item.type)||!item.source)continue;const doc=fromUuidSync(item.source.uuid);if(!doc){if(!item.source.missing){item.source.missing=true;changed=true;}continue;}if(item.source.missing){item.source.missing=false;changed=true;}if(doc.name!==item.name){item.aliases=[...new Set([...(item.aliases??[]),item.name])];item.name=doc.name;changed=true;}const art=item.type==="actor"?doc.img:(doc.background?.src||doc.img||"");if(item.art!==art){item.art=art;if(item.type==="actor")item.portrait=art;changed=true;}if(item.type==="actor"){const token=doc.prototypeToken?.texture?.src||"";if(item.tokenArt!==token){item.tokenArt=token;changed=true;}}}if(changed)await persist(data);}
-function installLauncher(){const tabs=document.querySelector("#sidebar-tabs");if(!tabs||tabs.querySelector("[data-tab=campaign-wiki]"))return;const link=document.createElement("a");link.className="item";link.dataset.tab="campaign-wiki";link.title="Campaign Wiki";link.innerHTML='<i class="fas fa-book-open"></i>';link.onclick=()=>openWiki();tabs.append(link);}
+function installLauncher(){
+  let launcher=document.querySelector("#campaign-wiki-launcher");
+  if(!launcher){launcher=document.createElement("button");launcher.id="campaign-wiki-launcher";launcher.type="button";launcher.dataset.tooltip="Open Campaign Wiki";launcher.setAttribute("aria-label","Open Campaign Wiki");launcher.innerHTML='<i class="fas fa-book-open"></i><span>Campaign Wiki</span>';launcher.addEventListener("click",openWiki);document.body.append(launcher);}
+  positionLauncher();
+}
+function positionLauncher(){const launcher=document.querySelector("#campaign-wiki-launcher");if(!launcher)return;const players=document.querySelector("#players");const rect=players?.getBoundingClientRect();launcher.style.left=rect&&rect.right>0?`${Math.round(rect.right+10)}px`:"228px";launcher.style.bottom=rect&&rect.bottom>0?`${Math.max(8,Math.round(window.innerHeight-rect.bottom))}px`:"12px";}
 function openWiki(){app??=new CampaignWikiApp();app.currentId=null;app.query="";app.render(true);}
 class OpenWikiMenu extends FormApplication{render(){openWiki();return this;}}
 class ExportWikiMenu extends FormApplication{render(){exportPackage();return this;}}
@@ -113,6 +118,6 @@ Hooks.once("init",()=>{
   game.settings.registerMenu(MODULE_ID,"importWiki",{name:"Import Campaign Wiki",label:"Import",hint:"Back up and replace this world's Campaign Wiki.",icon:"fas fa-upload",type:ImportWikiMenu,restricted:true});
   game.modules.get(MODULE_ID).api={open:openWiki,getDatabase:database,put:async input=>{const data=database(),result=putEntity(data,input);await persist(data);return result;},remove:async id=>{const data=database();removeEntity(data,id);await persist(data);},importFoundry,export:exportPackage};
 });
-Hooks.once("ready",async()=>{installLauncher();await syncSources();if(game.user.isGM)await offerMigration();});
-Hooks.on("renderSidebar",installLauncher);
+Hooks.once("ready",async()=>{ui.campaignWiki={open:openWiki,render:openWiki};installLauncher();window.addEventListener("resize",positionLauncher);await syncSources();if(game.user.isGM)await offerMigration();});
+Hooks.on("renderSidebar",installLauncher);Hooks.on("collapseSidebar",()=>setTimeout(positionLauncher,100));
 Hooks.on("updateActor",syncSources);Hooks.on("updateScene",syncSources);Hooks.on("deleteActor",syncSources);Hooks.on("deleteScene",syncSources);
