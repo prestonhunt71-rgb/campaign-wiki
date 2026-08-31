@@ -25,6 +25,12 @@ test("placeholder and missing source records enter Needs Actioning",()=>{
   assert.deepEqual(needsActioning(db).map(item=>item.kind),["Incomplete Article","Missing Foundry Source"]);
 });
 
+test("an unresolved artwork move enters Needs Actioning",()=>{
+  const db=emptyUnifiedDatabase();
+  putArticle(db,{id:"image",title:"Lost Image",parentIds:["root:images"],image:"old/image.webp",artworkIssue:{path:"old/image.webp",expectedPath:"new/image.webp",reason:"Not found"}});
+  assert.deepEqual(needsActioning(db).map(item=>item.kind),["Missing Artwork"]);
+});
+
 test("dates derive through descendants",()=>{
   const db=emptyUnifiedDatabase();
   putArticle(db,{id:"arc",title:"Arc",parentIds:["root:arcs"]});
