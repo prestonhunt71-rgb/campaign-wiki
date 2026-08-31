@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {emptyUnifiedDatabase,putArticle} from "../scripts/unified-core.js";
-import {artworkDestinations,artworkFolders,buildArtworkPlan,pathWithinRoot,representedArtworkPaths,safeFolderName} from "../scripts/artwork-organizer.js";
+import {analyzeArtworkDuplicates,artworkDestinations,artworkFolders,buildArtworkPlan,pathWithinRoot,representedArtworkPaths,safeFolderName} from "../scripts/artwork-organizer.js";
 
 test("Image sidebar ancestry becomes an artwork destination folder",()=>{
   const db=emptyUnifiedDatabase();
@@ -41,4 +41,13 @@ test("asset paths and folder names are normalized safely",()=>{
 test("both old links and planned destinations count as represented artwork",()=>{
   const root="worlds/golden-age-agents/campaign-wiki",plan=[{current:`${root}/Handouts/poster.png`,destination:`${root}/Session Art`,filename:"poster.png",status:"ready"}];
   assert.deepEqual([...representedArtworkPaths(plan,root)].sort(),[`${root}/handouts/poster.png`,`${root}/session art/poster.png`].sort());
+});
+
+test("duplicate analysis prefers the sidebar destination and detects filename conflicts",()=>{
+  const root="worlds/golden-age-agents/campaign-wiki",plan=[{articleId:"poster",current:`${root}/Handouts/poster.png`,destination:`${root}/Session Art`,filename:"poster.png",status:"ready"}],files=[{path:`${root}/Handouts/poster.png`,hash:"same"},{path:`${root}/Session Art/poster.png`,hash:"same"},{path:`${root}/Other/poster.png`,hash:"different"}];
+  const result=analyzeArtworkDuplicates(files,plan,root);
+  assert.deepEqual(result.duplicateGroups[0].canonical,[`${root}/Session Art/poster.png`]);
+  assert.deepEqual(result.duplicateGroups[0].redundant,[`${root}/Handouts/poster.png`]);
+  assert.equal(result.filenameConflicts.length,1);
+  assert.equal(result.filenameConflicts[0].files.length,3);
 });

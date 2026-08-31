@@ -24,5 +24,17 @@ export function buildArtworkPlan(database,rootPath){
 export function artworkFolders(plan,rootPath){const root=String(rootPath).replace(/\/+$/g,""),folders=new Set();for(const row of plan)for(const destination of row.destinations){let current=root;for(const segment of destination.slice(root.length).split("/").filter(Boolean)){current+=`/${segment}`;folders.add(current);}}return [...folders].sort((a,b)=>a.split("/").length-b.split("/").length||a.localeCompare(b));}
 export function representedArtworkPaths(plan,rootPath){const paths=new Set();for(const row of plan){const current=pathWithinRoot(row.current,rootPath);if(current)paths.add(current.toLocaleLowerCase());if(row.status==="ready"&&row.destination&&row.filename)paths.add(`${row.destination}/${row.filename}`.toLocaleLowerCase());}return paths;}
 
+export function analyzeArtworkDuplicates(files,plan,rootPath){
+  const expected=new Map(),current=new Map();
+  for(const row of plan){const currentPath=pathWithinRoot(row.current,rootPath)?.toLocaleLowerCase();if(currentPath){if(!current.has(currentPath))current.set(currentPath,[]);current.get(currentPath).push(row.articleId);}if(row.status==="ready"&&row.destination&&row.filename){const expectedPath=`${row.destination}/${row.filename}`.toLocaleLowerCase();if(!expected.has(expectedPath))expected.set(expectedPath,[]);expected.get(expectedPath).push(row.articleId);}}
+  const byHash=new Map(),byName=new Map();
+  for(const file of files){const path=pathWithinRoot(file.path,rootPath)??file.path,item={...file,path},hash=String(file.hash??"").toLocaleLowerCase();if(hash){if(!byHash.has(hash))byHash.set(hash,[]);byHash.get(hash).push(item);}const name=assetFilename(path).toLocaleLowerCase();if(!byName.has(name))byName.set(name,[]);byName.get(name).push(item);}
+  const duplicateGroups=[];
+  for(const[hash,members]of byHash)if(members.length>1){const expectedMembers=members.filter(item=>expected.has(item.path.toLocaleLowerCase())),currentMembers=members.filter(item=>current.has(item.path.toLocaleLowerCase())),canonical=expectedMembers.length?expectedMembers:currentMembers.length===1?currentMembers:[],canonicalPaths=new Set(canonical.map(item=>item.path.toLocaleLowerCase()));duplicateGroups.push({hash,status:expectedMembers.length?"sidebar-canonical":currentMembers.length===1?"current-canonical":"ambiguous",canonical:canonical.map(item=>item.path),redundant:members.filter(item=>!canonicalPaths.has(item.path.toLocaleLowerCase())).map(item=>item.path),members:members.map(item=>item.path)});}
+  const filenameConflicts=[];
+  for(const[name,members]of byName){const hashes=new Set(members.map(item=>String(item.hash??"").toLocaleLowerCase()).filter(Boolean));if(hashes.size>1)filenameConflicts.push({filename:name,files:members.map(item=>({path:item.path,hash:item.hash}))});}
+  return{duplicateGroups:duplicateGroups.sort((a,b)=>a.members[0].localeCompare(b.members[0])),filenameConflicts:filenameConflicts.sort((a,b)=>a.filename.localeCompare(b.filename))};
+}
+
 export function imageMenuArticleIds(database){return new Set(Object.values(database.articles).filter(article=>articlePaths(database,article).some(path=>path[0]===IMAGE_ROOT)).map(article=>article.id));}
 export function isImageFolder(database,article){return Boolean(article?.organizer||!article?.image&&childrenOf(database,article?.id).length);}
