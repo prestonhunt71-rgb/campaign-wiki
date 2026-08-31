@@ -43,6 +43,11 @@ test("both old links and planned destinations count as represented artwork",()=>
   assert.deepEqual([...representedArtworkPaths(plan,root)].sort(),[`${root}/handouts/poster.png`,`${root}/session art/poster.png`].sort());
 });
 
+test("artwork attached outside the Images menu also counts as represented",()=>{
+  const root="worlds/golden-age-agents/campaign-wiki",sessionArt=`${root}/Session Art/session.png`;
+  assert.equal(representedArtworkPaths([],root,[sessionArt,"modules/campaign-wiki/fallback.png"]).has(sessionArt.toLocaleLowerCase()),true);
+});
+
 test("duplicate analysis prefers the sidebar destination and detects filename conflicts",()=>{
   const root="worlds/golden-age-agents/campaign-wiki",plan=[{articleId:"poster",current:`${root}/Handouts/poster.png`,destination:`${root}/Session Art`,filename:"poster.png",status:"ready"}],files=[{path:`${root}/Handouts/poster.png`,hash:"same"},{path:`${root}/Session Art/poster.png`,hash:"same"},{path:`${root}/Other/poster.png`,hash:"different"}];
   const result=analyzeArtworkDuplicates(files,plan,root);
