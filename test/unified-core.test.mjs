@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {articlePaths,derivedDateRange,emptyUnifiedDatabase,migrateV2,needsActioning,putArticle,validateUnified} from "../scripts/unified-core.js";
+import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,migrateV2,needsActioning,putArticle,validateUnified} from "../scripts/unified-core.js";
 
 test("one Article can appear beneath multiple parents without duplication",()=>{
   const db=emptyUnifiedDatabase("test");
@@ -31,6 +31,28 @@ test("dates derive through descendants",()=>{
   putArticle(db,{id:"one",title:"One",parentIds:["arc"],date:"1937-01-02"});
   putArticle(db,{id:"two",title:"Two",parentIds:["arc"],date:"1937-03-04"});
   assert.deepEqual(derivedDateRange(db,"arc"),{start:"1937-01-02",end:"1937-03-04"});
+});
+
+test("visibility inherits top down but never propagates upward",()=>{
+  const db=emptyUnifiedDatabase();
+  const parent=putArticle(db,{id:"parent",title:"Parent",parentIds:["root:places"],visibility:VISIBILITY.PUBLIC});
+  const child=putArticle(db,{id:"child",title:"Child",parentIds:[parent.id]});
+  const grandchild=putArticle(db,{id:"grandchild",title:"Grandchild",parentIds:[child.id],visibility:VISIBILITY.GM});
+  assert.equal(isPublic(db,child),true);
+  assert.equal(isPublic(db,grandchild),false);
+  assert.equal(isPublic(db,parent),true);
+  child.visibility=VISIBILITY.GM;
+  assert.equal(isPublic(db,parent),true);
+});
+
+test("nearest explicit visibility wins and GM wins equal-depth conflicts",()=>{
+  const db=emptyUnifiedDatabase();
+  putArticle(db,{id:"public-parent",title:"Public Parent",parentIds:["root:people"],visibility:VISIBILITY.PUBLIC});
+  putArticle(db,{id:"gm-parent",title:"GM Parent",parentIds:["root:places"],visibility:VISIBILITY.GM});
+  const child=putArticle(db,{id:"child",title:"Child",parentIds:["public-parent","gm-parent"]});
+  assert.equal(isPublic(db,child),false);
+  child.visibility=VISIBILITY.PUBLIC;
+  assert.equal(isPublic(db,child),true);
 });
 
 test("v2 migration preserves content and exact multi-parent links",()=>{

@@ -12,7 +12,10 @@ Home is followed by five fixed roots: Metaplots, Arcs, Places, People, and Image
 - New Foundry Actors and Scenes automatically create placeholders beneath People and Places respectively.
 - Token art, source name, and source imagery synchronize without deleting Wiki text or relationships.
 - Dates on descendants provide derived date ranges for their parents.
-- Visibility supports Automatic, Always Public, and Always GM Only.
+- Contextual relationships and visibility inherit from ancestors downward, never from descendants upward.
+- Visibility supports Automatic, Always Public, and Always GM Only, with explicit Article settings overriding inheritance.
+- Player Preview simulates player-safe Articles, relationships, navigation, Home, and search.
+- GMs can customize the Home and hidden-Article unavailable pages from module settings.
 
 ## Installation
 
