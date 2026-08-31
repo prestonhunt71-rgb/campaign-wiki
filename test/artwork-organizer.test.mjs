@@ -51,3 +51,12 @@ test("duplicate analysis prefers the sidebar destination and detects filename co
   assert.equal(result.filenameConflicts.length,1);
   assert.equal(result.filenameConflicts[0].files.length,3);
 });
+
+test("duplicate analysis names a missing planned destination without calling an old copy canonical",()=>{
+  const root="worlds/golden-age-agents/campaign-wiki",plan=[{articleId:"poster",current:`${root}/Handouts/poster.png`,destination:`${root}/Media`,filename:"poster.png",status:"ready"}],files=[{path:`${root}/Handouts/poster.png`,hash:"same"},{path:`${root}/Session Art/poster.png`,hash:"same"}];
+  const [group]=analyzeArtworkDuplicates(files,plan,root).duplicateGroups;
+  assert.equal(group.status,"planned-canonical-missing");
+  assert.deepEqual(group.canonical,[`${root}/Media/poster.png`]);
+  assert.deepEqual(group.sources,files.map(file=>file.path));
+  assert.deepEqual(group.redundant,[]);
+});
