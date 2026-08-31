@@ -22,6 +22,7 @@ export function buildArtworkPlan(database,rootPath){
 }
 
 export function artworkFolders(plan,rootPath){const root=String(rootPath).replace(/\/+$/g,""),folders=new Set();for(const row of plan)for(const destination of row.destinations){let current=root;for(const segment of destination.slice(root.length).split("/").filter(Boolean)){current+=`/${segment}`;folders.add(current);}}return [...folders].sort((a,b)=>a.split("/").length-b.split("/").length||a.localeCompare(b));}
+export function representedArtworkPaths(plan,rootPath){const paths=new Set();for(const row of plan){const current=pathWithinRoot(row.current,rootPath);if(current)paths.add(current.toLocaleLowerCase());if(row.status==="ready"&&row.destination&&row.filename)paths.add(`${row.destination}/${row.filename}`.toLocaleLowerCase());}return paths;}
 
 export function imageMenuArticleIds(database){return new Set(Object.values(database.articles).filter(article=>articlePaths(database,article).some(path=>path[0]===IMAGE_ROOT)).map(article=>article.id));}
 export function isImageFolder(database,article){return Boolean(article?.organizer||!article?.image&&childrenOf(database,article?.id).length);}

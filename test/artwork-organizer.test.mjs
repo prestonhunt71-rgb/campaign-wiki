@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {emptyUnifiedDatabase,putArticle} from "../scripts/unified-core.js";
-import {artworkDestinations,artworkFolders,buildArtworkPlan,pathWithinRoot,safeFolderName} from "../scripts/artwork-organizer.js";
+import {artworkDestinations,artworkFolders,buildArtworkPlan,pathWithinRoot,representedArtworkPaths,safeFolderName} from "../scripts/artwork-organizer.js";
 
 test("Image sidebar ancestry becomes an artwork destination folder",()=>{
   const db=emptyUnifiedDatabase();
@@ -36,4 +36,9 @@ test("a new Image Article gets its upload folder before artwork is selected",()=
 test("asset paths and folder names are normalized safely",()=>{
   assert.equal(pathWithinRoot("https://assets.example/123/worlds/golden-age-agents/campaign-wiki/Session%20Art/a.webp","worlds/golden-age-agents/campaign-wiki"),"worlds/golden-age-agents/campaign-wiki/Session Art/a.webp");
   assert.equal(safeFolderName('Press: 1937/38'),"Press- 1937-38");
+});
+
+test("both old links and planned destinations count as represented artwork",()=>{
+  const root="worlds/golden-age-agents/campaign-wiki",plan=[{current:`${root}/Handouts/poster.png`,destination:`${root}/Session Art`,filename:"poster.png",status:"ready"}];
+  assert.deepEqual([...representedArtworkPaths(plan,root)].sort(),[`${root}/handouts/poster.png`,`${root}/session art/poster.png`].sort());
 });
