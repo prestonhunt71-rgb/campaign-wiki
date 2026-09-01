@@ -11,6 +11,13 @@ test("one Article can appear beneath multiple parents without duplication",()=>{
   assert.deepEqual(validateUnified(db),[]);
 });
 
+test("an optional Article quote is normalized and preserved",()=>{
+  const db=emptyUnifiedDatabase("test");
+  const article=putArticle(db,{id:"quoted",title:"Quoted",parentIds:["root:people"],quote:"  Words worth remembering.  "});
+  assert.equal(article.quote,"Words worth remembering.");
+  assert.equal(putArticle(db,{...article,text:"Updated"}).quote,"Words worth remembering.");
+});
+
 test("cycles and parentless Articles are rejected",()=>{
   const db=emptyUnifiedDatabase();
   putArticle(db,{id:"a",title:"A",parentIds:["root:places"]});
