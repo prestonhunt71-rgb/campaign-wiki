@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {emptyUnifiedDatabase,putArticle} from "../scripts/unified-core.js";
-import {analyzeArtworkDuplicates,artworkDestinations,artworkFolders,buildArtworkPlan,pathWithinRoot,representedArtworkPaths,safeFolderName} from "../scripts/artwork-organizer.js";
+import {analyzeArtworkDuplicates,artworkDestinations,artworkFolders,buildArtworkPlan,pathWithinRoot,representedArtworkPaths,safeFolderName,sidebarParentForArtworkPath,titleFromArtworkPath} from "../scripts/artwork-organizer.js";
 
 test("Image sidebar ancestry becomes an artwork destination folder",()=>{
   const db=emptyUnifiedDatabase();
@@ -31,6 +31,14 @@ test("a new Image Article gets its upload folder before artwork is selected",()=
   putArticle(db,{id:"crow",title:"The Crow of Ypres",parentIds:["session-art"]});
   const draft={id:"new",title:"New Image",parentIds:["crow"]};
   assert.deepEqual(artworkDestinations(db,draft,"worlds/golden-age-agents/campaign-wiki"),["worlds/golden-age-agents/campaign-wiki/Session Art/The Crow of Ypres"]);
+});
+
+test("an unrepresented file resolves to its deepest matching Images category",()=>{
+  const db=emptyUnifiedDatabase(),root="worlds/golden-age-agents/campaign-wiki";
+  putArticle(db,{id:"vehicles",title:"Vehicles",parentIds:["root:images"],organizer:true});
+  putArticle(db,{id:"comet",title:"The Comet",parentIds:["vehicles"],organizer:true});
+  assert.equal(sidebarParentForArtworkPath(db,`${root}/Vehicles/The Comet/TheMagicMable.jpg`,root),"comet");
+  assert.equal(titleFromArtworkPath(`${root}/Vehicles/TheMagicMable.jpg`),"The Magic Mable");
 });
 
 test("asset paths and folder names are normalized safely",()=>{
