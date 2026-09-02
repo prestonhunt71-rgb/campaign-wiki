@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,migrateV2,needsActioning,preferredPathTo,putArticle,relationshipDiagnostics,validateUnified} from "../scripts/unified-core.js";
+import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,preferredPathTo,putArticle,relationshipDiagnostics,validateUnified} from "../scripts/unified-core.js";
 
 test("one Article can appear beneath multiple parents without duplication",()=>{
   const db=emptyUnifiedDatabase("test");
@@ -24,6 +24,18 @@ test("relationship diagnostics can display Metaplot descendants through their Ar
   assert.ok(report.displayed.some(row=>row.id===arc.id&&row.distance===1));
   assert.ok(report.displayed.some(row=>row.id===person.id&&row.distance===2&&row.inherited));
   assert.ok(report.suppressed.some(row=>row.id===dnpc.id&&row.distance===3));
+});
+
+test("Article text links only the first title or alter-ego mention per related Article",()=>{
+  const db=emptyUnifiedDatabase("test"),source=putArticle(db,{id:"source",title:"Session",parentIds:["root:arcs"],text:"The Raven met Richard. Raven departed."}),raven=putArticle(db,{id:"raven",title:"Richard",aliases:["The Raven","Raven"],parentIds:[source.id],visibility:VISIBILITY.PUBLIC});
+  const linked=linkArticleText(db,source,[raven.id]);
+  assert.equal(linked.linkedIds.length,1);assert.equal((linked.html.match(/data-id="raven"/g)??[]).length,1);assert.match(linked.html,/met Richard\. Raven departed\./);
+});
+
+test("player Article text never links a hidden related Article",()=>{
+  const db=emptyUnifiedDatabase("test"),source=putArticle(db,{id:"source",title:"Session",parentIds:["root:arcs"],text:"The Raven arrived.",visibility:VISIBILITY.PUBLIC}),hidden=putArticle(db,{id:"hidden",title:"Richard",aliases:["The Raven"],parentIds:[source.id],visibility:VISIBILITY.GM});
+  const linked=linkArticleText(db,source,[hidden.id],{player:true});
+  assert.doesNotMatch(linked.html,/cw-inline-link|data-id=/);assert.match(linked.html,/The Raven arrived/);
 });
 
 test("parent picker path reconstruction prefers an Article's native sidebar tree",()=>{
