@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,migrateV2,needsActioning,putArticle,validateUnified} from "../scripts/unified-core.js";
+import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,migrateV2,needsActioning,preferredPathTo,putArticle,relationshipDiagnostics,validateUnified} from "../scripts/unified-core.js";
 
 test("one Article can appear beneath multiple parents without duplication",()=>{
   const db=emptyUnifiedDatabase("test");
@@ -9,6 +9,25 @@ test("one Article can appear beneath multiple parents without duplication",()=>{
   const palace=putArticle(db,{id:"palace",title:"The Emerald Palace",parentIds:[dragon.id,chinatown.id]});
   assert.deepEqual(articlePaths(db,palace),[["root:people","dragon","palace"],["root:places","chinatown","palace"]]);
   assert.deepEqual(validateUnified(db),[]);
+});
+
+test("relationship diagnostics separate one-step links from inherited graph paths",()=>{
+  const db=emptyUnifiedDatabase("test"),arc=putArticle(db,{id:"arc",title:"Arc",parentIds:["root:arcs"]}),session=putArticle(db,{id:"session",title:"Session",parentIds:[arc.id]}),hero=putArticle(db,{id:"hero",title:"Hero",parentIds:[session.id]}),dnpc=putArticle(db,{id:"dnpc",title:"DNPC",parentIds:[hero.id]});
+  const report=relationshipDiagnostics(db,session.id);
+  assert.deepEqual(report.displayed.map(row=>[row.id,row.direction,row.storedOn]).sort(),[["arc","parent","session"],["hero","child","hero"]]);
+  assert.ok(report.suppressed.some(row=>row.id==="dnpc"&&row.direction==="descendant"&&row.distance===2&&row.path.join(">")==="session>hero>dnpc"));
+});
+
+test("parent picker path reconstruction prefers an Article's native sidebar tree",()=>{
+  const db=emptyUnifiedDatabase("test"),npcs=putArticle(db,{id:"npcs",title:"NPCs",parentIds:["root:people"],organizer:true}),arc=putArticle(db,{id:"arc",title:"Arc",parentIds:["root:arcs"]}),person=putArticle(db,{id:"person",title:"Rosie",parentIds:[npcs.id,arc.id],source:{documentType:"Actor",id:"actor",uuid:"Actor.actor"}});
+  assert.deepEqual(preferredPathTo(db,person.id,"root:people"),["root:people","npcs","person"]);
+  assert.deepEqual(preferredPathTo(db,person.id,"root:arcs"),["root:arcs","arc","person"]);
+});
+
+test("normalization preserves valid editor path hints for multi-parent relationships",()=>{
+  const db=emptyUnifiedDatabase("test");putArticle(db,{id:"rosie",title:"Rosie",parentIds:["root:people"]});
+  const article=putArticle(db,{id:"room",title:"Room",parentIds:["rosie"],parentPathHints:{rosie:["root:people","npcs","rosie"],stale:["root:arcs","stale"]}});
+  assert.deepEqual(article.parentPathHints,{rosie:["root:people","npcs","rosie"]});
 });
 
 test("an optional Article quote is normalized and preserved",()=>{
