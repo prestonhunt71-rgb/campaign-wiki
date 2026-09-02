@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,validateUnified} from "../scripts/unified-core.js";
+import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,pathRuleState,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,validateUnified} from "../scripts/unified-core.js";
 
 test("one Article can appear beneath multiple parents without duplication",()=>{
   const db=emptyUnifiedDatabase("test");
@@ -42,6 +42,14 @@ test("Article linking depth traverses parent and child relationships independent
   const db=emptyUnifiedDatabase("test"),affiliation=putArticle(db,{id:"team",title:"The Golden Agents",parentIds:["root:people"]}),session=putArticle(db,{id:"session",title:"Session",parentIds:["root:arcs"]}),hero=putArticle(db,{id:"hero",title:"Hero",parentIds:[session.id,affiliation.id]}),dnpc=putArticle(db,{id:"dnpc",title:"DNPC",parentIds:[hero.id]});
   assert.deepEqual(new Set(relatedArticleIdsWithin(db,session.id,1)),new Set([hero.id]));
   assert.deepEqual(new Set(relatedArticleIdsWithin(db,session.id,2)),new Set([hero.id,affiliation.id,dnpc.id]));
+});
+
+test("linking category path rules inherit and permit narrower overrides",()=>{
+  const rules={"root:images":false,"root:images>vehicles":true,"root:images>vehicles>secret":false};
+  assert.equal(pathRuleState(rules,["root:people","heroes"],true),true);
+  assert.equal(pathRuleState(rules,["root:images","media","photo"],true),false);
+  assert.equal(pathRuleState(rules,["root:images","vehicles","car"],true),true);
+  assert.equal(pathRuleState(rules,["root:images","vehicles","secret"],true),false);
 });
 
 test("parent picker path reconstruction prefers an Article's native sidebar tree",()=>{
