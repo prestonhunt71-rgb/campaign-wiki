@@ -18,6 +18,14 @@ test("relationship diagnostics separate one-step links from inherited graph path
   assert.ok(report.suppressed.some(row=>row.id==="dnpc"&&row.direction==="descendant"&&row.distance===2&&row.path.join(">")==="session>hero>dnpc"));
 });
 
+test("relationship diagnostics can display Metaplot descendants through their Arcs",()=>{
+  const db=emptyUnifiedDatabase("test"),metaplot=putArticle(db,{id:"meta",title:"Metaplot",parentIds:["root:metaplots"]}),arc=putArticle(db,{id:"arc",title:"Arc",parentIds:[metaplot.id]}),person=putArticle(db,{id:"person",title:"Person",parentIds:[arc.id]}),dnpc=putArticle(db,{id:"dnpc",title:"DNPC",parentIds:[person.id]});
+  const report=relationshipDiagnostics(db,metaplot.id,{descendantDisplayDepth:2});
+  assert.ok(report.displayed.some(row=>row.id===arc.id&&row.distance===1));
+  assert.ok(report.displayed.some(row=>row.id===person.id&&row.distance===2&&row.inherited));
+  assert.ok(report.suppressed.some(row=>row.id===dnpc.id&&row.distance===3));
+});
+
 test("parent picker path reconstruction prefers an Article's native sidebar tree",()=>{
   const db=emptyUnifiedDatabase("test"),npcs=putArticle(db,{id:"npcs",title:"NPCs",parentIds:["root:people"],organizer:true}),arc=putArticle(db,{id:"arc",title:"Arc",parentIds:["root:arcs"]}),person=putArticle(db,{id:"person",title:"Rosie",parentIds:[npcs.id,arc.id],source:{documentType:"Actor",id:"actor",uuid:"Actor.actor"}});
   assert.deepEqual(preferredPathTo(db,person.id,"root:people"),["root:people","npcs","person"]);

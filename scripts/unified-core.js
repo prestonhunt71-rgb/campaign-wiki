@@ -32,14 +32,14 @@ export function articlePaths(database,article){return article.parentIds.flatMap(
 export function breadcrumb(database,path){return["Home",...path.map(id=>ROOT_IDS.has(id)?rootName(id):database.articles[id]?.title).filter(Boolean)];}
 export function primaryRoot(database,article){return articlePaths(database,article)[0]?.find(id=>ROOT_IDS.has(id))??null;}
 export function preferredPathTo(database,parentId,preferredRoot=null){if(ROOT_IDS.has(parentId))return[parentId];const paths=pathsTo(database,parentId);return paths.sort((a,b)=>Number(b[0]===preferredRoot)-Number(a[0]===preferredRoot)||a.length-b.length||breadcrumb(database,a).join("/").localeCompare(breadcrumb(database,b).join("/")))[0]??[preferredRoot||"root:people"];}
-export function relationshipDiagnostics(database,articleId){
+export function relationshipDiagnostics(database,articleId,{descendantDisplayDepth=1}={}){
   const article=database.articles[articleId];if(!article)return{placements:[],displayed:[],suppressed:[]};
   const placements=articlePaths(database,article).map(path=>({path,labels:breadcrumb(database,path).slice(1)}));
   const displayed=[],suppressed=[],seen=new Set(),add=(bucket,row)=>{const key=`${row.direction}:${row.id}:${row.path.join(">")}`;if(!seen.has(key)){seen.add(key);bucket.push(row);}};
   for(const parentId of article.parentIds)if(!ROOT_IDS.has(parentId)&&database.articles[parentId])add(displayed,{id:parentId,direction:"parent",distance:1,path:[articleId,parentId],storedOn:articleId});
   for(const child of childrenOf(database,articleId))add(displayed,{id:child.id,direction:"child",distance:1,path:[articleId,child.id],storedOn:child.id});
   const climb=(id,path,visited)=>{const current=database.articles[id];if(!current)return;for(const parentId of current.parentIds){if(ROOT_IDS.has(parentId)||visited.has(parentId)||!database.articles[parentId])continue;const next=[...path,parentId],distance=next.length-1;if(distance>1)add(suppressed,{id:parentId,direction:"ancestor",distance,path:next,storedOn:id});climb(parentId,next,new Set(visited).add(parentId));}};
-  const descend=(id,path,visited)=>{for(const child of childrenOf(database,id)){if(visited.has(child.id))continue;const next=[...path,child.id],distance=next.length-1;if(distance>1)add(suppressed,{id:child.id,direction:"descendant",distance,path:next,storedOn:child.id});descend(child.id,next,new Set(visited).add(child.id));}};
+  const descend=(id,path,visited)=>{for(const child of childrenOf(database,id)){if(visited.has(child.id))continue;const next=[...path,child.id],distance=next.length-1;if(distance>1)add(distance<=descendantDisplayDepth?displayed:suppressed,{id:child.id,direction:"descendant",distance,path:next,storedOn:child.id,inherited:true});descend(child.id,next,new Set(visited).add(child.id));}};
   climb(articleId,[articleId],new Set([articleId]));descend(articleId,[articleId],new Set([articleId]));return{placements,displayed,suppressed};
 }
 export function derivedDateRange(database,articleId){const dates=[articleId,...descendantsOf(database,articleId)].map(id=>database.articles[id]?.date).filter(Boolean).sort();return dates.length?{start:dates[0],end:dates.at(-1)}:null;}
