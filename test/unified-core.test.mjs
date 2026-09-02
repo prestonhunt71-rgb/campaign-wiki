@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,preferredPathTo,putArticle,relationshipDiagnostics,validateUnified} from "../scripts/unified-core.js";
+import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,validateUnified} from "../scripts/unified-core.js";
 
 test("one Article can appear beneath multiple parents without duplication",()=>{
   const db=emptyUnifiedDatabase("test");
@@ -36,6 +36,12 @@ test("player Article text never links a hidden related Article",()=>{
   const db=emptyUnifiedDatabase("test"),source=putArticle(db,{id:"source",title:"Session",parentIds:["root:arcs"],text:"The Raven arrived.",visibility:VISIBILITY.PUBLIC}),hidden=putArticle(db,{id:"hidden",title:"Richard",aliases:["The Raven"],parentIds:[source.id],visibility:VISIBILITY.GM});
   const linked=linkArticleText(db,source,[hidden.id],{player:true});
   assert.doesNotMatch(linked.html,/cw-inline-link|data-id=/);assert.match(linked.html,/The Raven arrived/);
+});
+
+test("Article linking depth traverses parent and child relationships independently of card depth",()=>{
+  const db=emptyUnifiedDatabase("test"),affiliation=putArticle(db,{id:"team",title:"The Golden Agents",parentIds:["root:people"]}),session=putArticle(db,{id:"session",title:"Session",parentIds:["root:arcs"]}),hero=putArticle(db,{id:"hero",title:"Hero",parentIds:[session.id,affiliation.id]}),dnpc=putArticle(db,{id:"dnpc",title:"DNPC",parentIds:[hero.id]});
+  assert.deepEqual(new Set(relatedArticleIdsWithin(db,session.id,1)),new Set([hero.id]));
+  assert.deepEqual(new Set(relatedArticleIdsWithin(db,session.id,2)),new Set([hero.id,affiliation.id,dnpc.id]));
 });
 
 test("parent picker path reconstruction prefers an Article's native sidebar tree",()=>{
