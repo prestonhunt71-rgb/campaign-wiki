@@ -11,6 +11,22 @@ test("one Article can appear beneath multiple parents without duplication",()=>{
   assert.deepEqual(validateUnified(db),[]);
 });
 
+test("Article titles are unique across the entire Wiki",()=>{
+  const db=emptyUnifiedDatabase("test");
+  putArticle(db,{id:"person",title:"The Comet",parentIds:["root:people"]});
+  assert.throws(()=>putArticle(db,{id:"image",title:"  the\u00a0comet  ",parentIds:["root:images"]}),/already exists.*unique across the entire Wiki/);
+  assert.throws(()=>putArticle(db,{id:"place",title:"THE COMET",parentIds:["root:places"]}),/already exists/);
+});
+
+test("existing duplicate titles are grandfathered until one is renamed",()=>{
+  const db=emptyUnifiedDatabase("test");
+  putArticle(db,{id:"first",title:"Legacy Name",parentIds:["root:people"]});
+  const second=putArticle(db,{id:"second",title:"Legacy Name",parentIds:["root:places"]},{allowDuplicateTitle:true});
+  const third=putArticle(db,{id:"third",title:"Another Name",parentIds:["root:images"]});
+  assert.equal(putArticle(db,{...second,text:"Still editable"}).text,"Still editable");
+  assert.throws(()=>putArticle(db,{...third,title:"Legacy Name"}),/already exists/);
+});
+
 test("relationship diagnostics separate one-step links from inherited graph paths",()=>{
   const db=emptyUnifiedDatabase("test"),arc=putArticle(db,{id:"arc",title:"Arc",parentIds:["root:arcs"]}),session=putArticle(db,{id:"session",title:"Session",parentIds:[arc.id]}),hero=putArticle(db,{id:"hero",title:"Hero",parentIds:[session.id]}),dnpc=putArticle(db,{id:"dnpc",title:"DNPC",parentIds:[hero.id]});
   const report=relationshipDiagnostics(db,session.id);
@@ -30,6 +46,18 @@ test("Article text links only the first title or alter-ego mention per related A
   const db=emptyUnifiedDatabase("test"),source=putArticle(db,{id:"source",title:"Session",parentIds:["root:arcs"],text:"The Raven met Richard. Raven departed."}),raven=putArticle(db,{id:"raven",title:"Richard",aliases:["The Raven","Raven"],parentIds:[source.id],visibility:VISIBILITY.PUBLIC});
   const linked=linkArticleText(db,source,[raven.id]);
   assert.equal(linked.linkedIds.length,1);assert.equal((linked.html.match(/data-id="raven"/g)??[]).length,1);assert.match(linked.html,/met Richard\. Raven departed\./);
+});
+
+test("Article text prefers a full alias over a shorter overlapping alias",()=>{
+  const db=emptyUnifiedDatabase("test"),source=putArticle(db,{id:"source",title:"Session",parentIds:["root:arcs"],text:"Baron von Hammersmark entered."}),baron=putArticle(db,{id:"baron",title:"Baron Helmut von Hammersmark",aliases:["von Hammersmark","Baron von Hammersmark"],parentIds:["root:people"]});
+  const linked=linkArticleText(db,source,[baron.id]);
+  assert.match(linked.html,/data-id="baron">Baron von Hammersmark<\/button> entered\./);assert.doesNotMatch(linked.html,/Baron <button/);
+});
+
+test("Article text treats pasted non-breaking spaces as ordinary alias spacing",()=>{
+  const db=emptyUnifiedDatabase("test"),source=putArticle(db,{id:"source",title:"Session",parentIds:["root:arcs"],text:"Baron\u00a0von Hammersmark entered."}),baron=putArticle(db,{id:"baron",title:"Baron Helmut von Hammersmark",aliases:["von Hammersmark","Baron von Hammersmark"],parentIds:["root:people"]});
+  const linked=linkArticleText(db,source,[baron.id]);
+  assert.match(linked.html,/data-id="baron">Baron\u00a0von Hammersmark<\/button> entered\./);assert.doesNotMatch(linked.html,/Baron\u00a0<button/);
 });
 
 test("player Article text never links a hidden related Article",()=>{
