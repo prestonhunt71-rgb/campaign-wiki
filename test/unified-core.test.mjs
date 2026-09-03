@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,pathRuleState,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,validateUnified} from "../scripts/unified-core.js";
+import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,pathRuleState,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,sidebarPickerAllows,validateUnified} from "../scripts/unified-core.js";
 
 test("one Article can appear beneath multiple parents without duplication",()=>{
   const db=emptyUnifiedDatabase("test");
@@ -50,6 +50,15 @@ test("linking category path rules inherit and permit narrower overrides",()=>{
   assert.equal(pathRuleState(rules,["root:images","media","photo"],true),false);
   assert.equal(pathRuleState(rules,["root:images","vehicles","car"],true),true);
   assert.equal(pathRuleState(rules,["root:images","vehicles","secret"],true),false);
+});
+
+test("parent picker keeps sidebar families separate from cross-category relationships",()=>{
+  assert.equal(sidebarPickerAllows("root:arcs",0,"arc"),true);
+  assert.equal(sidebarPickerAllows("root:arcs",1,"session"),true);
+  assert.equal(sidebarPickerAllows("root:arcs",1,"person"),false);
+  assert.equal(sidebarPickerAllows("root:arcs",1,"place"),false);
+  assert.equal(sidebarPickerAllows("root:people",1,"person"),true);
+  assert.equal(sidebarPickerAllows("root:people",1,"place"),false);
 });
 
 test("parent picker path reconstruction prefers an Article's native sidebar tree",()=>{
