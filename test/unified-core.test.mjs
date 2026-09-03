@@ -80,6 +80,16 @@ test("an optional Article quote is normalized and preserved",()=>{
   assert.equal(putArticle(db,{...article,text:"Updated"}).quote,"Words worth remembering.");
 });
 
+test("Current Status defaults to Active and preserves supported choices",()=>{
+  const db=emptyUnifiedDatabase("test");
+  const active=putArticle(db,{id:"active",title:"Active",parentIds:["root:people"]});
+  const missing=putArticle(db,{id:"missing",title:"Missing",parentIds:["root:people"],currentStatus:"missing"});
+  const invalid=putArticle(db,{id:"invalid",title:"Invalid",parentIds:["root:people"],currentStatus:"vacation"});
+  assert.equal(active.currentStatus,"active");
+  assert.equal(missing.currentStatus,"missing");
+  assert.equal(invalid.currentStatus,"active");
+});
+
 test("cycles and parentless Articles are rejected",()=>{
   const db=emptyUnifiedDatabase();
   putArticle(db,{id:"a",title:"A",parentIds:["root:places"]});
