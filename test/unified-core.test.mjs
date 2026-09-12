@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,pathRuleState,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,sidebarPickerAllows,validateUnified} from "../scripts/unified-core.js";
+import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,pathRuleState,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,sidebarPickerAllows,sourceRecoveryInventory,validateUnified} from "../scripts/unified-core.js";
 
 test("one Article can appear beneath multiple parents without duplication",()=>{
   const db=emptyUnifiedDatabase("test");
@@ -130,6 +130,21 @@ test("placeholder and missing source records enter Needs Actioning",()=>{
   const db=emptyUnifiedDatabase();
   putArticle(db,{id:"stub",title:"Stub",parentIds:["root:people"],placeholder:true,source:{documentType:"Actor",id:"x",uuid:"Actor.x",missing:true}});
   assert.deepEqual(needsActioning(db).map(item=>item.kind),["Incomplete Article","Missing Foundry Source"]);
+});
+
+test("source recovery finds missing links and unlinked Foundry documents",()=>{
+  const db=emptyUnifiedDatabase("test");
+  putArticle(db,{id:"linked",title:"Linked Actor",parentIds:["root:people"],source:{documentType:"Actor",id:"actor-1",uuid:"Actor.actor-1",missing:false}});
+  putArticle(db,{id:"missing",title:"Old Scene",parentIds:["root:places"],source:{documentType:"Scene",id:"scene-old",uuid:"Scene.scene-old",missing:true}});
+  const inventory=sourceRecoveryInventory(db,[{documentType:"Actor",id:"actor-1",name:"Linked Actor"},{documentType:"Scene",id:"scene-new",name:"New Scene"}]);
+  assert.deepEqual(inventory.missingArticles.map(article=>article.id),["missing"]);
+  assert.deepEqual(inventory.unlinkedSources.map(source=>source.id),["scene-new"]);
+});
+
+test("source recovery detects a vanished source even before its missing flag is set",()=>{
+  const db=emptyUnifiedDatabase("test");
+  putArticle(db,{id:"scene",title:"Vanished Scene",parentIds:["root:places"],source:{documentType:"Scene",id:"gone",uuid:"Scene.gone",missing:false}});
+  assert.deepEqual(sourceRecoveryInventory(db,[]).missingArticles.map(article=>article.id),["scene"]);
 });
 
 test("an unresolved artwork move enters Needs Actioning",()=>{
