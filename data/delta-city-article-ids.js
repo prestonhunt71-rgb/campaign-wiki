@@ -1,0 +1,32 @@
+// Stable Article IDs verified against the campaign export; no world data is changed.
+export const deltaCityArticleId = "scene-f92a5f43-ba80-48e2-8aaa-1061b8903972";
+export const districtArticleIds = {
+  "district-01-downtown": "scene-37a970ce-7a74-4e26-8c0c-c02cf9dfc79e",
+  "district-02-new-town-park": "article-e84e1349-b7ca-44fe-a23d-165a8e2634fe",
+  "district-03-racine": "scene-ec8cd469-2580-4a99-bad6-400c460756bf",
+  "district-04-nordham": "article-2e0a7484-c9cc-493e-976a-777d7fb559ca",
+  "district-05-new-brighton": "article-d11de56e-8f56-4014-aeca-2b2bf3cc0d68",
+  "district-06-jefferson-heights": "article-94d993c9-4534-49a9-b99f-cc5d24477ae4",
+  "district-07-neville-park": "article-f9424356-138e-46e5-a096-c8098645a2c6",
+  "district-08-coventry-estates": "article-4bab196f-9d34-4ceb-9a2b-15fb54419ed9",
+  "district-09-victoria-place": "article-6215a697-1bdf-444c-be2d-536af6135518",
+  "district-10-charon-hollow": "article-79769fa7-4dfb-4d60-8389-f6b332947cdc",
+  "district-11-st-theresas-mission-hospital": "article-3fd8894f-0891-4e95-9e96-c5a69a8fd44f",
+  "district-12-the-bowery": "article-2e40a9ac-5061-445c-b16d-ec550be24459",
+  "district-13-skid-row": "article-a96bf70e-f22d-4697-8c6e-17b2617c61f9",
+  "district-14-little-stockton": "article-7217b898-0c28-4f58-84b5-59b1f31e2415",
+  "district-15-danville-backlot-district": "article-96637691-d422-4608-8945-594e814c1f7f",
+  "district-16-beachfront": "article-4c1a063c-8314-46ce-b720-5d621ad0edb3",
+  "district-17-chinatown": "scene-e604cf8c-3dba-402b-8e85-c85e5509919d",
+  "district-18-englewood": "scene-a74dfc3e-653c-43a9-a2a8-bbe098c86455",
+  "district-19-industrial-belt-pelham-mckees": "article-fdf9bee7-89ca-416b-b5db-84f1aacaff86",
+  "district-20-reading-fields": "article-e5966f5d-8a02-4f6f-bebe-93bf1ab5fed3",
+  "district-21-delta-station": "article-cfbe4c3d-b493-42ba-b643-b10ccc88512e",
+  "district-22-west-side": "article-9fe0ec9a-d3b3-494d-9c20-944ac6e6ab43",
+  "district-23-south-shore": "article-3510781a-b7f1-4e18-a25a-24acba966037",
+  "district-24-blumberg-crossroads": "article-b3df1ede-8caa-41a0-af77-80eee915f177",
+  "district-25-the-marshes": "article-aa2dbd08-8d8d-42f9-a3c2-53e0f24fa811",
+  "district-26-little-yokohama": "article-bc47215a-3e11-48a7-83be-1f4dad80e016",
+  "district-27-willoughby": "article-ca82c959-a8bf-4006-9a73-49d771948e1f",
+  "district-28-falcroft": "article-1aeb6796-1742-489b-98f5-3fc5ad78a757"
+};
