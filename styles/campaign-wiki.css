@@ -30,3 +30,17 @@
 
 .cw-district-location{min-width:0}
 .cw-district-location>svg{display:block;width:100%;height:auto;overflow:hidden;border:1px solid var(--rule)}
+
+.cw-map-pin{cursor:pointer;outline:none}
+.cw-map-pin circle,.cw-picker-point{fill:#c62828;stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
+.cw-map-pin:hover circle,.cw-map-pin:focus circle{fill:#1565c0;stroke:#fff;stroke-width:3}
+.cw-map-pin-label{display:block;padding:5px 0;font-weight:bold;overflow-wrap:anywhere}
+.cw-map-pin-label[hidden],.cw-location-editor[hidden],.cw-picker-point[hidden]{display:none}
+.cw-coordinate-picker>svg{display:block;width:100%;height:auto;max-height:560px;overflow:hidden;cursor:crosshair;touch-action:manipulation}
+.cw-coordinate-picker>svg:focus{outline:2px solid #1565c0;outline-offset:2px}
+.cw-location-buttons{display:flex;gap:8px}
+.cw-map-thumbnail{display:block;border:0;flex-shrink:0}
+.cw-card .cw-map-thumbnail,.cw-attention-open .cw-map-thumbnail{width:58px;height:58px}
+.cw-relationship-card .cw-map-thumbnail{width:62px;height:62px}
+.cw-first-appearance .cw-map-thumbnail{width:64px;height:64px}
+.cw-article-of-day-card>.cw-map-thumbnail{width:100%;height:192px}
