@@ -16,5 +16,5 @@ export function districtLocationMapHtml(article){
  const district=districtForArticle(article);
  if(!district)return '';
  const {x,y,width,height}=getDistrictBounds(district.points);
- return `<section class="cw-sidebar-fact cw-district-location"><h2>Location</h2><svg role="img" aria-label="${escape(article.title)} — location in Delta City" viewBox="${x} ${y} ${width} ${height}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet"><image href="modules/campaign-wiki/assets/delta-city-finalmap.png" x="0" y="0" width="1100" height="1430"/><polygon points="${district.points.map(p=>p.join(',')).join(' ')}"/></svg></section>`;
+ return `<section class="cw-sidebar-fact cw-district-location"><h2>Location</h2><svg role="img" aria-label="${escape(article.title)} — location in Delta City" viewBox="${x} ${y} ${width} ${height}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet"><image href="modules/campaign-wiki/assets/delta-city-finalmap.png" x="0" y="0" width="1100" height="1430"/></svg></section>`;
 }

@@ -27,7 +27,7 @@ test('stable IDs select districts despite title edits without changing article d
   assert.equal(districtForArticle(a),d);
   assert.match(html,/Location/);
   assert.ok(html.includes(`viewBox="${b.x} ${b.y} ${b.width} ${b.height}"`));
-  assert.ok(html.includes(`points="${d.points.map(p=>p.join(',')).join(' ')}"`));
+  assert.doesNotMatch(html, /<polygon|data-district|is-selected/);
   assert.equal(JSON.stringify(a),before);
  }
 });
