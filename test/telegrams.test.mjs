@@ -73,16 +73,16 @@ test('automatic linking excludes Telegrams both ways, even after reading',()=>{
  assert.deepEqual(core.linkArticleText(f.data,a,['raven']).linkedIds,[]);
  assert.deepEqual(core.linkArticleText(f.data,f.data.articles.raven,['letter']).linkedIds,[]);
 });
-function renderer(f,user){
+function renderer(f,user,random=Math.random){
  const source=fs.readFileSync(new URL('../scripts/campaign-wiki.js',import.meta.url),'utf8').replace(/^import .*;\r?$/gm,'');
- const ctx={...core,...telegrams,...newspapers,console,structuredClone,Application:class{},FormApplication:class{},Hooks:{once(){},on(){}},
+ const ctx={...core,...telegrams,...newspapers,Math:Object.assign(Object.create(Math),{random}),console,structuredClone,Application:class{},FormApplication:class{},Hooks:{once(){},on(){}},
  game:{user,users:f.users,world:{id:'test'},settings:{get:(_module,key)=>key==='databaseV3'?f.data:key==='automaticArticleLinking'?true:undefined}},
  foundry:{utils:{deepClone:structuredClone}},fromUuidSync:()=>null,
  mapThumbnailHtml:()=>'',districtLocationMapHtml:()=>'',isDeltaCityArticle:()=>false,
  requestTelegramOpen:async id=>{markTelegramOpened(f.data,id,user,f.users);},$:html=>html,
  ui:{notifications:{warn(){}}}};
  vm.createContext(ctx);
- vm.runInContext(source+'\nglobalThis.renderers={database,homeHtml,articleHtml,relationshipSections,navigation,CampaignWikiApp};',ctx);
+ vm.runInContext(source+'\nglobalThis.renderers={database,homeHtml,articleOfDayHtml,articleHtml,relationshipSections,navigation,CampaignWikiApp};',ctx);
  return ctx.renderers;
 }
 test('real parent rendering hides active telegrams for every viewer and shows newest five read cards',()=>{
@@ -220,4 +220,48 @@ test('editor warnings refresh from unsaved parent and status selections',()=>{
  status.value='inactive';statusListeners.change();assert.equal(warning.hidden,true);
  status.value='active';statusListeners.change();assert.equal(warning.hidden,false);
  assert.deepEqual(article.parentIds,['telegrams']);
+});
+
+test('empty GM Needs Actioning section is omitted and populated section remains',()=>{
+ const f=fixture();f.data=core.emptyUnifiedDatabase();
+ const r=renderer(f,f.gm);
+ assert.doesNotMatch(r.homeHtml(f.data,false),/Needs Actioning|Nothing needs actioning/);
+ assert.match(r.homeHtml(f.data,false),/GM-Only Articles/);
+ core.putArticle(f.data,{id:'todo',title:'Todo',parentIds:['root:people'],placeholder:true});
+ assert.match(r.homeHtml(f.data,false),/Needs Actioning/);
+ assert.doesNotMatch(r.homeHtml(f.data,true),/Needs Actioning/);
+});
+test('random feature includes recent visible leaves but excludes parents, organizers and GM-only articles',()=>{
+ const f=fixture();f.data=core.emptyUnifiedDatabase();
+ const add=(id,fields={})=>core.putArticle(f.data,{id,title:id,parentIds:['root:people'],visibility:'always-public',...fields});
+ add('parent');add('leaf-one',{parentIds:['parent']});add('leaf-two');
+ add('secret',{visibility:'always-gm'});add('category',{organizer:true});
+ add('private-parent',{visibility:'always-gm'});add('private-child',{parentIds:['private-parent'],visibility:'automatic'});
+ for(const [random,id] of [[0,'leaf-one'],[0.999,'leaf-two']]){
+  const r=renderer(f,f.paul,()=>random),html=r.articleOfDayHtml(f.data,Object.values(f.data.articles),true);
+  assert.match(html,new RegExp('data-id="'+id+'"'));
+  assert.doesNotMatch(html,/data-id="(?:parent|secret|category|private-parent|private-child)"/);
+  assert.equal(r.articleOfDayHtml(f.data,[],false),'');
+ }
+});
+test('new telegram editor waits for Save and labels unsaved telegram recipients Addressed to',()=>{
+ const f=fixture(),article=core.normalizeArticle({id:'unsaved',title:'Draft',parentIds:['root:people']});
+ const warning={},label={},help={},listeners={};let parents=['telegrams'];
+ const element={querySelector:s=>({'[data-telegram-warning]':warning,'[data-address-label]':label,'[data-address-help]':help}[s]||null),querySelectorAll:()=>parents.map(value=>({value})),addEventListener:(name,fn)=>listeners[name]=fn};
+ telegrams.setupTelegramEditor(element,f.data,article,()=>f.users);
+ assert.equal(warning.hidden,true);assert.equal(label.textContent,'Addressed to');
+ parents=['telegrams','raven'];listeners['cw-parents-changed']();
+ assert.equal(warning.hidden,true);
+ const saved=core.putArticle(f.data,{...article,parentIds:parents});
+ assert.equal(telegramWarning(f.data,saved,f.users),'');
+ assert.equal(telegramRecipient(f.data,saved,f.users).recipient.users[0].id,f.paul.id);
+ parents=['root:people'];listeners['cw-parents-changed']();assert.equal(label.textContent,'Aliases');
+ assert.match(telegramWarning(f.data,{...saved,parentIds:['telegrams']},f.users),/no parent Actor/);
+});
+test('telegram article labels its preserved aliases as Addressed to',()=>{
+ const f=fixture(),article=f.telegram('letter',{currentStatus:'inactive'}),r=renderer(f,f.gm);
+ const html=r.articleHtml(f.data,article,null,new Set(),false);
+ assert.match(html,/<h2>Addressed to<\/h2>/);assert.doesNotMatch(html,/<h2>Aliases<\/h2>/);
+ f.data.articles.raven.aliases=['Regular alias'];
+ assert.match(r.articleHtml(f.data,f.data.articles.raven,null,new Set(),false),/<h2>Aliases<\/h2>/);
 });

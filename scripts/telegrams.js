@@ -81,7 +81,12 @@ export function setupTelegramEditor(element, data, article, getUsers) {
   if (!warning) return;
   const refresh = () => {
     const draft = {...article, parentIds: Array.from(element.querySelectorAll("[name=parentIds]"), input => input.value), currentStatus: element.querySelector("[name=currentStatus]")?.value || article.currentStatus};
-    const message = telegramWarning(data, draft, getUsers());
+    const addressed = isTelegram(data, draft);
+    const label = element.querySelector("[data-address-label]"), help = element.querySelector("[data-address-help]");
+    if (label) label.textContent = addressed ? "Addressed to" : "Aliases";
+    if (help) help.textContent = addressed ? "One name per line. The first name appears on the delivery button." : "One per line.";
+    // New articles are still being assembled; validate their recipient after Save.
+    const message = data.articles[article.id] ? telegramWarning(data, draft, getUsers()) : '';
     warning.textContent = message;
     warning.hidden = !message;
   };

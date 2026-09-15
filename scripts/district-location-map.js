@@ -13,7 +13,7 @@ export function districtMapSvg(article,{pins=[],picker=false}={}){
 }
 export function districtLocationMapHtml(article,visibleArticles=[]){
  if(!districtForArticle(article))return '';
- return `<section class="cw-sidebar-fact cw-district-location"><h2>Location</h2>${districtMapSvg(article,{pins:directMapPins(article,visibleArticles)})}<span class="cw-map-pin-label" role="status" hidden></span></section>`;
+ return `<section class="cw-sidebar-fact cw-district-location"><h2>Location</h2>${districtMapSvg(article,{pins:directMapPins(article,visibleArticles)})}</section>`;
 }
 export function mapThumbnailHtml(article){
  const district=districtForArticle(article);
@@ -23,11 +23,6 @@ export function mapThumbnailHtml(article){
 }
 export function activateDistrictPins(root,openArticle){
  root.querySelectorAll('.cw-map-pin').forEach(pin=>{
-  const label=pin.closest('.cw-district-location').querySelector('.cw-map-pin-label');
-  const show=()=>{label.textContent=pin.getAttribute('aria-label');label.hidden=false;};
-  const hide=()=>{label.hidden=true;};
-  pin.addEventListener('pointerenter',show);pin.addEventListener('pointerleave',hide);
-  pin.addEventListener('focus',show);pin.addEventListener('blur',hide);
   pin.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();openArticle(pin.dataset.id);});
   pin.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openArticle(pin.dataset.id);}});
  });

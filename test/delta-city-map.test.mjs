@@ -17,3 +17,12 @@ test('rendering preserves records and links only unambiguous visible district ar
  assert.equal(Object.keys(districtArticleIds).length,28);
  for(const district of deltaCityMap.districts)assert.ok(html.includes(`points="${district.points.map(p=>p.join(',')).join(' ')}"`));
 });
+
+test('Skid Row begins at the Bowery southern street boundary',()=>{
+ const skid=deltaCityMap.districts.find(d=>d.name==='Skid Row');
+ assert.deepEqual(skid.points[0],[247.43,970]);
+ assert.deepEqual(skid.points.at(-1),[342.53,969.63]);
+ assert.ok(skid.points.every(([,y])=>y>=969.63));
+ const html=deltaCityMapHtml([{id:'bowery',title:'The Bowery'}]);
+ assert.match(html,/aria-label="The Bowery" data-district="district-12-the-bowery" data-name="The Bowery" data-article-id="bowery"/);
+});
