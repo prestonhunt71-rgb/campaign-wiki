@@ -172,3 +172,28 @@ test('offline GM leaves Telegram active and returns an actionable error',async()
  await assert.rejects(paul.ctx.api.requestTelegramOpen('letter'),/Game Master must be connected/);
  assert.equal(h.stored.articles.letter.currentStatus,'active');
 });
+test('inactive telegrams do not show delivery warnings or require a current assignment',()=>{
+ const f=fixture(),a=f.telegram('archived',{currentStatus:'inactive',parentIds:['telegrams']});
+ assert.equal(telegramWarning(f.data,a,f.users),'');
+ a.currentStatus='active';assert.match(telegramWarning(f.data,a,f.users),/assigned character/);
+});
+test('editor warnings refresh from unsaved parent and status selections',()=>{
+ const f=fixture(),article=f.telegram('draft',{parentIds:['telegrams']});
+ const listeners={},statusListeners={},warning={textContent:'',hidden:true};
+ let parents=['telegrams'];
+ const status={value:'active',addEventListener:(name,fn)=>statusListeners[name]=fn};
+ const element={
+  querySelector:selector=>selector==='[data-telegram-warning]'?warning:status,
+  querySelectorAll:()=>parents.map(value=>({value})),
+  addEventListener:(name,fn)=>listeners[name]=fn
+ };
+ telegrams.setupTelegramEditor(element,f.data,article,()=>f.users);
+ assert.equal(warning.hidden,false);assert.match(warning.textContent,/no parent Actor/);
+ parents=['telegrams','raven'];listeners['cw-parents-changed']();
+ assert.equal(warning.hidden,true);assert.equal(warning.textContent,'');
+ parents.push('doc');listeners['cw-parents-changed']();
+ assert.equal(warning.hidden,false);assert.match(warning.textContent,/ambiguous/);
+ status.value='inactive';statusListeners.change();assert.equal(warning.hidden,true);
+ status.value='active';statusListeners.change();assert.equal(warning.hidden,false);
+ assert.deepEqual(article.parentIds,['telegrams']);
+});

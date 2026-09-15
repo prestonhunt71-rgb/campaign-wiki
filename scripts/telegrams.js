@@ -30,9 +30,9 @@ export function mayReceiveTelegram(data, article, user, users) {
   return telegramRecipient(data, article, users).recipient?.users[0].id === user.id;
 }
 export function telegramWarning(data, article, users) {
-  if (!isTelegram(data, article)) return '';
+  if (!isActiveTelegram(data, article)) return '';
   const {matches, recipient} = telegramRecipient(data, article, users);
-  if (!matches.length) return 'Telegram has no parent Actor assigned as a player character. Delivery is disabled.';
+  if (!matches.length) return 'Telegram has no parent Actor assigned as a player character. Check the parent article Foundry Actor link and the assigned character in Foundry User Configuration. Delivery is disabled.';
   if (!recipient) return 'Telegram recipient is ambiguous: use exactly one parent Actor assigned to exactly one player. Delivery is disabled.';
   return '';
 }
@@ -74,4 +74,18 @@ export function telegramNoticeHtml(data, user, users) {
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const addressee = article.aliases?.[0]?.trim();
   return '<div class="cw-telegram-delivery"><button type="button" class="cw-telegram-notice" data-action="open" data-id="' + esc(article.id) + '"><span aria-hidden="true">✉</span> ' + esc(addressee ? 'TELEGRAM FOR ' + addressee.toUpperCase() + '!' : 'TELEGRAM WAITING!') + '</button></div>';
+}
+
+export function setupTelegramEditor(element, data, article, getUsers) {
+  const warning = element.querySelector("[data-telegram-warning]");
+  if (!warning) return;
+  const refresh = () => {
+    const draft = {...article, parentIds: Array.from(element.querySelectorAll("[name=parentIds]"), input => input.value), currentStatus: element.querySelector("[name=currentStatus]")?.value || article.currentStatus};
+    const message = telegramWarning(data, draft, getUsers());
+    warning.textContent = message;
+    warning.hidden = !message;
+  };
+  element.addEventListener("cw-parents-changed", refresh);
+  element.querySelector("[name=currentStatus]")?.addEventListener("change", refresh);
+  refresh();
 }
