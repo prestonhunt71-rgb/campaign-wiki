@@ -1,10 +1,10 @@
 {
   "name": "campaign-wiki",
-  "version": "3.0.34",
+  "version": "3.0.35",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "check": "node --check scripts/core.js && node --check scripts/unified-core.js && node --check scripts/campaign-wiki.js && node --test test/*.test.mjs"
+    "check": "node --check scripts/core.js && node --check scripts/unified-core.js && node --check scripts/campaign-wiki.js && node --check scripts/telegrams.js && node --check scripts/telegram-delivery.js && node --test test/*.test.mjs"
   }
 }

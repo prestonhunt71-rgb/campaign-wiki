@@ -1,3 +1,4 @@
+import {isTelegram} from "./telegrams.js";
 import {articlePaths, visibleArticles} from './unified-core.js';
 
 export const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -20,7 +21,7 @@ export function newsstandStock(data,asPlayer=false) {
   if(!stand || !visible.some(a=>a.id===stand.id)) return [];
   const categories=new Set(visible.filter(a=>a.parentIds.includes(stand.id)&&shelfNames.has(key(a.title))&&
     articlePaths(data,a).some(p=>p[0]==='root:images'&&(p[1]==='organizer:media'||key(data.articles[p[1]]?.title)==='media'))).map(a=>a.id));
-  return visible.filter(a=>!categories.has(a.id)&&isMediaArticle(data,a)&&
+  return visible.filter(a=>!categories.has(a.id)&&!isTelegram(data,a)&&isMediaArticle(data,a)&&
     (a.parentIds.includes(stand.id)||articlePaths(data,a).some(p=>p.slice(0,-1).some(id=>categories.has(id))))).sort(newestFirst);
 }
 export function latestNewspaper(data, asPlayer = false) {
