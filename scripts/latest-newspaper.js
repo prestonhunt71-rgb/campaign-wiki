@@ -35,10 +35,10 @@ export function newsboyCry(article) {
   return wrappers[hash % wrappers.length](headline);
 }
 export function latestNewspaperTickerHtml(data, asPlayer = false) {
-  const article = latestNewspaper(data, asPlayer);
-  if (!article) return '';
+  const article = latestNewspaper(data, asPlayer), stand = findNewsstand(data);
+  if (!article || !stand) return '';
   const cry = escapeHtml(newsboyCry(article));
-  return `<button type="button" class="cw-newspaper-ticker" data-action="open" data-id="${escapeHtml(article.id)}" aria-label="${escapeHtml(`Open latest newspaper article: ${article.quote.trim()}`)}"><span class="cw-newspaper-track" aria-hidden="true"><span>${cry}</span><span class="cw-newspaper-repeat">${cry}</span></span></button>`;
+  return `<button type="button" class="cw-newspaper-ticker" data-action="open" data-id="${escapeHtml(stand.id)}" aria-label="${escapeHtml(`Visit ${stand.title}: ${article.quote.trim()}`)}"><span class="cw-newspaper-track" aria-hidden="true"><span>${cry}</span><span class="cw-newspaper-repeat">${cry}</span></span></button>`;
 }
 const shelfNames = new Map([
  ['newspapers','Newspapers'],

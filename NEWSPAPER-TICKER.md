@@ -10,7 +10,8 @@ The custom Place is resolved by the unique title or alias `Nakamura News and Sun
 
 ## Layout
 
-- Today's Paper appears beneath the description, alongside the artwork/status/aliases column, and opens the same article as the homepage ticker.
+- The homepage ticker always opens Nakamura News and Sundries. Its headline still comes from the latest qualifying Media article's Quote.
+- Today's Paper appears beneath the description, alongside the artwork/status/aliases column, and opens the newspaper article itself.
 - Back Numbers shows the five preceding eligible articles, excluding Today's Paper.
 - Magazines & Periodicals, Comic Books, Books for Your Leisure, Picture Post Cards, and Sundries follow in that order. Each shows up to five items newest first in a vertical list.
 - Existing location, NPC, and other relationships remain below the shelves; stock is omitted from those generic relationship lists to avoid duplicates.

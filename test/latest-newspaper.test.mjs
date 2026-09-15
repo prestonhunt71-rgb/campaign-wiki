@@ -20,6 +20,19 @@ test('directly stocked Media still requires a quote for the ticker, with no chec
  add('paper',{quote:'Headline',newspaper:false});
  assert.equal(latestNewspaper(db).id,'paper');
 });
+test('ticker always opens the newsstand as the current headline changes',()=>{
+ const {db,add}=fixture();
+ add('first',{quote:'First headline',date:'1937-01-01'});
+ let html=latestNewspaperTickerHtml(db,true);
+ assert.match(html,/data-action="open" data-id="stand"/);
+ assert.match(html,/aria-label="Visit Nakamura News and Sundries: First headline"/);
+ add('second',{quote:'Second headline',date:'1937-01-02'});
+ html=latestNewspaperTickerHtml(db,true);
+ assert.match(html,/data-action="open" data-id="stand"/);
+ assert.match(html,/Second headline/);
+ assert.doesNotMatch(html,/First headline/);
+ assert.match(todaysPaperHtml(db,db.articles.stand,true),/data-id="second"/);
+});
 test('article Date determines current edition, creation breaks ties and session dates do not override',()=>{
  const {db,add}=fixture();
  add('arc',{parentIds:['root:arcs']});add('session',{parentIds:['arc'],date:'1999-01-01'});
