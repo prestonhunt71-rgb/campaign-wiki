@@ -49,18 +49,20 @@ test('player stock and current edition exclude hidden articles and hidden stand'
  assert.doesNotMatch(newsstandShelvesHtml(db,db.articles.stand,true),/Secret/);
  db.articles.stand.visibility='always-gm';assert.equal(latestNewspaper(db,true),null);
 });
-test('shelves contain five descending dated items, and back numbers exclude today',()=>{
+test('shelves contain every item in descending date order, and back numbers exclude today',()=>{
  const {db,add}=fixture();
  for(const title of ['Magazines','Comics','Books','Postcards'])add(title,{title,organizer:true,parentIds:['organizer:media']});
  for(let i=1;i<=8;i++){
   add('paper'+i,{date:`1937-01-0${i}`,quote:'Headline '+i});
-  for(const type of ['Magazines','Comics','Books','Postcards'])add(type+i,{parentIds:[type,'stand'],date:`1937-01-0${i}`});
+  for(const type of ['Magazines','Comics','Books','Postcards'])add(type+i,{parentIds:[type],date:`1937-01-0${i}`});
  }
  add('misc',{date:'1937-01-01'});
  const {today,groups}=newsstandShelves(db);
- assert.equal(today.id,'paper8');assert.deepEqual(groups[0].items.map(a=>a.id),['paper7','paper6','paper5','paper4','paper3']);
+ assert.equal(today.id,'paper8');assert.deepEqual(groups[0].items.map(a=>a.id),['paper7','paper6','paper5','paper4','paper3','paper2','paper1']);
  assert.deepEqual(groups.map(g=>g.title),['Back Numbers','Magazines & Periodicals','Comic Books','Books for Your Leisure','Picture Post Cards','Sundries']);
- for(const group of groups.slice(1,5)){assert.equal(group.items.length,5);assert.equal(group.items[0].date,'1937-01-08');}
+ for(const group of groups.slice(1,5)){assert.equal(group.items.length,8);assert.deepEqual(group.items.map(a=>a.date),Array.from({length:8},(_,i)=>'1937-01-0'+(8-i)));}
+ const html=newsstandShelvesHtml(db,db.articles.stand);
+ for(const id of ['paper1','Magazines1','Comics1','Books1','Postcards1'])assert.ok(html.includes('data-id='+String.fromCharCode(34)+id+String.fromCharCode(34)));
  assert.match(todaysPaperHtml(db,db.articles.stand),/Today's Paper/);
  assert.equal(todaysPaperHtml(db,db.articles.misc),'');
 });
@@ -102,12 +104,12 @@ test('nested category stock is deduplicated and unrelated Media branches stay ou
  add('Posters',{parentIds:['organizer:media','stand'],organizer:true});
  add('poster',{parentIds:['Posters']});
  add('Books',{parentIds:['organizer:media'],organizer:true});
- add('unstocked book',{parentIds:['Books']});
- assert.deepEqual(newsstandStock(db).map(a=>a.id),['issue']);
+ add('unstocked book',{parentIds:['Books'],date:'1930-01-01'});
+ assert.deepEqual(newsstandStock(db).map(a=>a.id),['unstocked book','issue']);
  putArticle(db,{id:'issue',parentIds:['series']});
- assert.deepEqual(newsstandStock(db).map(a=>a.id),['issue']);
+ assert.deepEqual(newsstandStock(db).map(a=>a.id),['unstocked book','issue']);
  putArticle(db,{id:'Magazines',parentIds:['organizer:media']});
- assert.deepEqual(newsstandStock(db),[]);
+ assert.deepEqual(newsstandStock(db).map(a=>a.id),['unstocked book','issue']);
 });
 
 test('hidden shelf categories do not supply player stock',()=>{

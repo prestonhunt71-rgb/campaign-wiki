@@ -31,6 +31,17 @@ export function pathsTo(database,parentId,seen=new Set()){
   if(ROOT_IDS.has(parentId))return[[parentId]];if(seen.has(parentId))return[];const article=database.articles[parentId];if(!article)return[];const next=new Set(seen).add(parentId),paths=[];for(const ancestorId of article.parentIds)for(const path of pathsTo(database,ancestorId,next))paths.push([...path,parentId]);return paths;
 }
 export function articlePaths(database,article){return article.parentIds.flatMap(parentId=>pathsTo(database,parentId).map(path=>[...path,article.id]));}
+export function primaryArticlePath(database,article,seen=new Set()){
+  if(!article||seen.has(article.id))return null;
+  const next=new Set(seen).add(article.id);
+  for(const parentId of article.parentIds){
+    const hint=article.parentPathHints?.[parentId];
+    if(Array.isArray(hint)&&hint.length&&hint.at(-1)===parentId&&ROOT_IDS.has(hint[0])&&new Set(hint).size===hint.length&&hint.every((id,index)=>!next.has(id)&&(index===0||database.articles[id]?.parentIds.includes(hint[index-1]))))return[...hint,article.id];
+    const parentPath=ROOT_IDS.has(parentId)?[parentId]:primaryArticlePath(database,database.articles[parentId],next);
+    if(parentPath)return[...parentPath,article.id];
+  }
+  return null;
+}
 export function breadcrumb(database,path){return["Home",...path.map(id=>ROOT_IDS.has(id)?rootName(id):database.articles[id]?.title).filter(Boolean)];}
 export function primaryRoot(database,article){return articlePaths(database,article)[0]?.find(id=>ROOT_IDS.has(id))??null;}
 export function preferredPathTo(database,parentId,preferredRoot=null){if(ROOT_IDS.has(parentId))return[parentId];const paths=pathsTo(database,parentId);return paths.sort((a,b)=>Number(b[0]===preferredRoot)-Number(a[0]===preferredRoot)||a.length-b.length||breadcrumb(database,a).join("/").localeCompare(breadcrumb(database,b).join("/")))[0]??[preferredRoot||"root:people"];}

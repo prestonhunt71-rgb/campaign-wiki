@@ -19,7 +19,7 @@ export function newestFirst(a,b) {
 export function newsstandStock(data,asPlayer=false) {
   const stand=findNewsstand(data), visible=visibleArticles(data,asPlayer);
   if(!stand || !visible.some(a=>a.id===stand.id)) return [];
-  const categories=new Set(visible.filter(a=>a.parentIds.includes(stand.id)&&shelfNames.has(key(a.title))&&
+  const categories=new Set(visible.filter(a=>shelfNames.has(key(a.title))&&
     articlePaths(data,a).some(p=>p[0]==='root:images'&&(p[1]==='organizer:media'||key(data.articles[p[1]]?.title)==='media'))).map(a=>a.id));
   return visible.filter(a=>!categories.has(a.id)&&!isTelegram(data,a)&&isMediaArticle(data,a)&&
     (a.parentIds.includes(stand.id)||articlePaths(data,a).some(p=>p.slice(0,-1).some(id=>categories.has(id))))).sort(newestFirst);
@@ -54,9 +54,9 @@ export function shelfFor(data,article) {
 }
 export function newsstandShelves(data,asPlayer=false) {
  const stock=newsstandStock(data,asPlayer), papers=stock.filter(a=>a.quote?.trim());
- const groups=new Map([['Back Numbers',papers.slice(1,6)],['Newspapers',[]],['Magazines & Periodicals',[]],['Comic Books',[]],['Books for Your Leisure',[]],['Picture Post Cards',[]],['Sundries',[]]]);
+ const groups=new Map([['Back Numbers',papers.slice(1)],['Newspapers',[]],['Magazines & Periodicals',[]],['Comic Books',[]],['Books for Your Leisure',[]],['Picture Post Cards',[]],['Sundries',[]]]);
  for(const article of stock.filter(a=>!a.quote?.trim())) groups.get(shelfFor(data,article)).push(article);
- return {today:papers[0]??null,groups:[...groups].map(([title,items])=>({title,items:items.slice(0,5)})).filter(g=>g.items.length)};
+ return {today:papers[0]??null,groups:[...groups].map(([title,items])=>({title,items})).filter(g=>g.items.length)};
 }
 export function newsstandCardHtml(article,featured=false) {
  return `<button type="button" class="cw-relationship-card cw-newsstand-card${featured?' cw-todays-paper-card':''}" data-action="open" data-id="${escapeHtml(article.id)}">${article.image?`<img src="${escapeHtml(article.image)}" alt="" loading="lazy">`:'<span aria-hidden="true">▤</span>'}<span><strong>${escapeHtml(article.title)}</strong>${article.date?`<small>${escapeHtml(article.date)}</small>`:''}${featured?`<em>${escapeHtml(article.quote)}</em>`:''}</span></button>`;
