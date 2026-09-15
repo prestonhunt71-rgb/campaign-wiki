@@ -44,3 +44,15 @@
 .cw-relationship-card .cw-map-thumbnail{width:62px;height:62px}
 .cw-first-appearance .cw-map-thumbnail{width:64px;height:64px}
 .cw-article-of-day-card>.cw-map-thumbnail{width:100%;height:192px}
+
+/* A compact newsprint strip, using the wiki's existing paper and ink palette. */
+.campaign-wiki .cw-newspaper-ticker{display:block;width:100%;min-width:0;height:auto;margin:0 0 20px;padding:8px 0;overflow:hidden;border:0;border-block:3px double var(--rule);border-radius:0;background:var(--paper);color:var(--accent);font:bold 16px/1.4 Georgia,serif;text-align:left;cursor:pointer}
+.cw-newspaper-track{display:flex;width:max-content;animation:cw-newsboy-scroll 35s linear infinite}
+.cw-newspaper-track>span{flex:none;padding-inline:20px;white-space:nowrap}
+.campaign-wiki .cw-newspaper-ticker:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.cw-newspaper-ticker:is(:hover,:focus-visible) .cw-newspaper-track{animation:none;transform:none;display:block;width:auto}
+.cw-newspaper-ticker:is(:hover,:focus-visible) .cw-newspaper-track>span{display:block;white-space:normal;overflow-wrap:anywhere}
+.cw-newspaper-ticker:is(:hover,:focus-visible) .cw-newspaper-repeat{display:none}
+@keyframes cw-newsboy-scroll{to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.cw-newspaper-track{animation:none;display:block;width:auto}.cw-newspaper-track>span{display:block;white-space:normal;overflow-wrap:anywhere}.cw-newspaper-track>.cw-newspaper-repeat{display:none}}
+.cw-todays-paper{margin-top:24px}.cw-newsstand-card>span{white-space:normal;overflow-wrap:anywhere}.cw-newsstand-card strong{font:inherit}.cw-newsstand-card small,.cw-newsstand-card em{display:block;margin-top:6px;font:14px/1.4 Georgia,serif;white-space:normal}.cw-newsstand-card small{color:var(--muted)}.cw-newsstand-card img{object-fit:contain}.cw-todays-paper-card{grid-template-columns:100px minmax(0,1fr)}.cw-todays-paper-card img{width:90px;height:120px}
