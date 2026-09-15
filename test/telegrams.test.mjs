@@ -172,6 +172,30 @@ test('offline GM leaves Telegram active and returns an actionable error',async()
  await assert.rejects(paul.ctx.api.requestTelegramOpen('letter'),/Game Master must be connected/);
  assert.equal(h.stored.articles.letter.currentStatus,'active');
 });
+test('delivery label uses the first nonblank Alias and never substitutes a character name',()=>{
+ const f=fixture(),a=f.telegram('letter');
+ a.aliases=['  ',' Kelly Walter ','Second Alias'];
+ assert.match(telegramNoticeHtml(f.data,f.paul,f.users),/TELEGRAM FOR KELLY WALTER!/);
+ assert.doesNotMatch(telegramNoticeHtml(f.data,f.paul,f.users),/SECOND ALIAS|TELEGRAM WAITING/);
+ a.aliases=['  '];
+ assert.match(telegramNoticeHtml(f.data,f.paul,f.users),/TELEGRAM WAITING!/);
+});
+test('Home delivery sits inside the sidebar, outside the article content, for the recipient only',async()=>{
+ const f=fixture();f.telegram('waiting');
+ for(const user of f.users){
+  const r=renderer(f,user),app=new r.CampaignWikiApp(),html=await app._renderInner();
+  const sidebar=html.match(/<aside>([\s\S]*?)<\/aside>/)[1];
+  const main=html.match(/<main>([\s\S]*?)<\/main>/)[1];
+  assert.doesNotMatch(main,/cw-telegram-notice/);
+  if(user===f.paul)assert.match(sidebar,/TELEGRAM FOR KELLY WALTER!/);
+  else assert.doesNotMatch(sidebar,/cw-telegram-notice/);
+  assert.equal(f.data.articles.waiting.currentStatus,'active');
+  app.query='raven';
+  assert.doesNotMatch(await app._renderInner(),/cw-telegram-notice/);
+ }
+ const r=renderer(f,f.gm),preview=new r.CampaignWikiApp();preview.playerPreview=true;
+ assert.doesNotMatch(await preview._renderInner(),/cw-telegram-notice/);
+});
 test('inactive telegrams do not show delivery warnings or require a current assignment',()=>{
  const f=fixture(),a=f.telegram('archived',{currentStatus:'inactive',parentIds:['telegrams']});
  assert.equal(telegramWarning(f.data,a,f.users),'');

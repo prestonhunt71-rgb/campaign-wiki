@@ -72,7 +72,7 @@ export function telegramNoticeHtml(data, user, users) {
   const article = waitingTelegram(data, user, users);
   if (!article) return '';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const addressee = article.aliases?.[0]?.trim();
+  const addressee = (Array.isArray(article.aliases) ? article.aliases : []).map(alias => String(alias ?? '').trim()).find(Boolean);
   return '<div class="cw-telegram-delivery"><button type="button" class="cw-telegram-notice" data-action="open" data-id="' + esc(article.id) + '"><span aria-hidden="true">✉</span> ' + esc(addressee ? 'TELEGRAM FOR ' + addressee.toUpperCase() + '!' : 'TELEGRAM WAITING!') + '</button></div>';
 }
 

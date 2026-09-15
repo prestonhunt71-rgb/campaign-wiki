@@ -10,7 +10,7 @@
 Exactly one Actor parent must be assigned to exactly one non-GM, non-Gametable account. Missing or ambiguous assignments disable delivery and appear as GM warnings. No named player or hero assignment is hard-coded. The reserved generic account name Gametable is explicitly excluded (case-insensitive).
 
 ## Delivery and archive
-The recipient's Home page shows one envelope notice for the oldest waiting telegram. Article Date orders delivery; creation time and article ID supply deterministic fallbacks. Opening commits Current Status to Inactive, and the next waiting telegram becomes available. Opening as GM or in GM Player Preview never consumes it.
+The recipient's Home page shows one envelope notice near the bottom of the left wiki sidebar for the oldest waiting telegram. The first nonblank Alias on that Telegram article supplies TELEGRAM FOR {Alias}!; an article without an Alias shows TELEGRAM WAITING! Article Date orders delivery; creation time and article ID supply deterministic fallbacks. Opening commits Current Status to Inactive, and the next waiting telegram becomes available. Opening as GM or in GM Player Preview never consumes it.
 
 Active telegrams are absent from all parent relationship sections, including the GM's. Inactive telegrams appear in the ordinary **Telegrams** section on each related parent: newest five, followed by “… and N more” using the existing expand control. Ordinary article visibility governs the archive, so configure the usual parent/article visibility for the desired audience.
 
