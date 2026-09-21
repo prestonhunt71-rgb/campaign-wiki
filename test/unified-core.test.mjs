@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,pathRuleState,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,sidebarPickerAllows,sourceRecoveryInventory,validateUnified} from "../scripts/unified-core.js";
+import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,pathRuleState,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,resolveMissingSource,sidebarPickerAllows,sourceRecoveryInventory,validateUnified} from "../scripts/unified-core.js";
 
 test("one Article can appear beneath multiple parents without duplication",()=>{
   const db=emptyUnifiedDatabase("test");
@@ -141,6 +141,17 @@ test("source recovery finds missing links and unlinked Foundry documents",()=>{
   assert.deepEqual(inventory.unlinkedSources.map(source=>source.id),["scene-new"]);
 });
 
+test("missing source warnings can be ignored or permanently unlinked",()=>{
+  const db=emptyUnifiedDatabase("test");
+  putArticle(db,{id:"ignore",title:"Keep Link",parentIds:["root:places"],source:{documentType:"Scene",id:"gone-1",uuid:"Scene.gone-1",missing:true}});
+  putArticle(db,{id:"unlink",title:"Remove Link",parentIds:["root:places"],source:{documentType:"Scene",id:"gone-2",uuid:"Scene.gone-2",missing:true}});
+  assert.equal(resolveMissingSource(db,"ignore","ignore"),true);
+  assert.equal(resolveMissingSource(db,"unlink","unlink"),true);
+  assert.equal(db.articles.ignore.source.id,"gone-1");
+  assert.equal(db.articles.unlink.source,null);
+  assert.deepEqual(needsActioning(db),[]);
+  assert.deepEqual(sourceRecoveryInventory(db,[]).missingArticles,[]);
+});
 test("source recovery detects a vanished source even before its missing flag is set",()=>{
   const db=emptyUnifiedDatabase("test");
   putArticle(db,{id:"scene",title:"Vanished Scene",parentIds:["root:places"],source:{documentType:"Scene",id:"gone",uuid:"Scene.gone",missing:false}});
