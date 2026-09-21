@@ -231,6 +231,19 @@ test('empty GM Needs Actioning section is omitted and populated section remains'
  assert.match(r.homeHtml(f.data,false),/Needs Actioning/);
  assert.doesNotMatch(r.homeHtml(f.data,true),/Needs Actioning/);
 });
+test('GM-only Home groups include Automatic Arcs and Sessions by effective visibility',()=>{
+ const f=fixture();f.data=core.emptyUnifiedDatabase();
+ core.putArticle(f.data,{id:'secret-arc',title:'Secret Arc',parentIds:['root:arcs'],visibility:'automatic',status:'in-progress'});
+ core.putArticle(f.data,{id:'secret-session',title:'Secret Session',parentIds:['secret-arc'],visibility:'automatic'});
+ core.putArticle(f.data,{id:'public-arc',title:'Public Arc',parentIds:['root:arcs'],visibility:'automatic',status:'complete'});
+ const html=renderer(f,f.gm).homeHtml(f.data,false);
+ const gmOnly=html.slice(html.indexOf('<section class="cw-gm-only"'),html.indexOf('<section><h2>Recently Added'));
+ assert.ok(gmOnly.includes('GM-Only Articles <span>2</span>'));
+ assert.ok(gmOnly.includes('Arcs <span>2</span>'));
+ assert.ok(gmOnly.includes('Secret Arc'));
+ assert.ok(gmOnly.includes('Secret Session'));
+ assert.ok(!gmOnly.includes('Public Arc'));
+});
 test('random feature includes recent visible leaves but excludes parents, organizers and GM-only articles',()=>{
  const f=fixture();f.data=core.emptyUnifiedDatabase();
  const add=(id,fields={})=>core.putArticle(f.data,{id,title:id,parentIds:['root:people'],visibility:'always-public',...fields});
