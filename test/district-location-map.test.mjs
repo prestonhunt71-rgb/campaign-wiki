@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {deltaCityMap} from '../data/delta-city-districts.js';
 import {deltaCityArticleId,districtArticleIds} from '../data/delta-city-article-ids.js';
 import {getDistrictBounds,districtForArticle,districtLocationMapHtml} from '../scripts/district-location-map.js';
+import {districtLabelLayout} from '../scripts/district-label-layout.js';
 test('all 28 district crops contain every original vertex with prescribed padding',()=>{
  assert.equal(new Set(Object.values(districtArticleIds)).size,28);
  for(const d of deltaCityMap.districts){
@@ -27,7 +28,9 @@ test('stable IDs select districts despite title edits without changing article d
   assert.equal(districtForArticle(a),d);
   assert.match(html,/Location/);
   assert.ok(html.includes(`viewBox="${b.x} ${b.y} ${b.width} ${b.height}"`));
-  assert.doesNotMatch(html, /<polygon|data-district|is-selected/);
+  assert.match(html, /<polygon class="cw-district-outline"/);
+  assert.match(html, /<text class="cw-district-label"/);
+  assert.ok(districtLabelLayout(d),d.name);
   assert.equal(JSON.stringify(a),before);
  }
 });

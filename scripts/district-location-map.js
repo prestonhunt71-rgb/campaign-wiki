@@ -1,5 +1,6 @@
 import {districtForArticle,getDistrictBounds} from './district-map-geometry.js';
 import {directMapPins} from './map-location.js';
+import {districtLabelLayout} from './district-label-layout.js';
 import {deltaCityArticleId} from '../data/delta-city-article-ids.js';
 export {districtForArticle,getDistrictBounds} from './district-map-geometry.js';
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8,8 +9,11 @@ export function districtMapSvg(article,{pins=[],picker=false}={}){
  const district=districtForArticle(article);if(!district)return '';
  const {x,y,width,height}=getDistrictBounds(district.points);
  const radius=Math.max(width,height)/55;
+ const outline=`<polygon class="cw-district-outline" points="${district.points.map(point=>point.join(',')).join(' ')}"/>`;
+ const layout=districtLabelLayout(district);
+ const label=layout?`<text class="cw-district-label" x="${layout.x}" y="${layout.y}" font-size="${layout.size}">${layout.lines.map((line,index)=>`<tspan x="${layout.x}" dy="${index?1.2:-(layout.lines.length-1)*.6}em">${escape(line)}</tspan>`).join('')}</text>`:'';
  const markers=pins.map(child=>`<g class="cw-map-pin" role="link" tabindex="0" data-action="open" data-id="${escape(child.id)}" aria-label="${escape(child.title)}" transform="translate(${child.mapLocation.x} ${child.mapLocation.y})"><circle r="${radius}"/><title>${escape(child.title)}</title></g>`).join('');
- return `<svg ${picker?'data-location-picker tabindex="0" role="application"':'role="group"'} aria-label="${escape(article.title)} — location in Delta City" viewBox="${x} ${y} ${width} ${height}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet"><image href="${canonicalMapImage}" x="0" y="0" width="1100" height="1430"/>${markers}${picker?`<circle class="cw-picker-point" r="${radius}" hidden/>`:''}</svg>`;
+ return `<svg class="cw-district-map" ${picker?'data-location-picker tabindex="0" role="application"':'role="group"'} aria-label="${escape(article.title)} — location in Delta City" viewBox="${x} ${y} ${width} ${height}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet"><image href="${canonicalMapImage}" x="0" y="0" width="1100" height="1430"/>${outline}${label}${markers}${picker?`<circle class="cw-picker-point" r="${radius}" hidden/>`:''}</svg>`;
 }
 export function districtLocationMapHtml(article,visibleArticles=[]){
  if(!districtForArticle(article))return '';
