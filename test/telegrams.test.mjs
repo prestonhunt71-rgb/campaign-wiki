@@ -231,6 +231,16 @@ test('empty GM Needs Actioning section is omitted and populated section remains'
  assert.match(r.homeHtml(f.data,false),/Needs Actioning/);
  assert.doesNotMatch(r.homeHtml(f.data,true),/Needs Actioning/);
 });
+test('Arc and Metaplot overviews remain single column without artwork or text',()=>{
+ const f=fixture();f.data=core.emptyUnifiedDatabase();
+ const metaplot=core.putArticle(f.data,{id:'meta-layout',title:'Metaplot Layout',parentIds:['root:metaplots'],visibility:'always-public'});
+ const arc=core.putArticle(f.data,{id:'arc-layout',title:'Arc Layout',parentIds:['root:arcs'],visibility:'always-public'});
+ const session=core.putArticle(f.data,{id:'session-layout',title:'Session Layout',parentIds:[arc.id],visibility:'always-public'});
+ const r=renderer(f,f.gm);
+ assert.match(r.articleHtml(f.data,metaplot,null,new Set(),false),/class="cw-unified-body cw-story-overview"/);
+ assert.match(r.articleHtml(f.data,arc,null,new Set(),false),/class="cw-unified-body cw-story-overview"/);
+ assert.doesNotMatch(r.articleHtml(f.data,session,null,new Set(),false),/cw-story-overview/);
+});
 test('GM-only Home groups include Automatic Arcs and Sessions by effective visibility',()=>{
  const f=fixture();f.data=core.emptyUnifiedDatabase();
  core.putArticle(f.data,{id:'secret-metaplot',title:'Secret Metaplot',parentIds:['root:metaplots'],visibility:'automatic'});
