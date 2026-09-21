@@ -30,7 +30,12 @@ test('stable IDs select districts despite title edits without changing article d
   assert.ok(html.includes(`viewBox="${b.x} ${b.y} ${b.width} ${b.height}"`));
   assert.match(html, /<polygon class="cw-district-outline"/);
   assert.match(html, /<text class="cw-district-label"/);
-  assert.ok(districtLabelLayout(d),d.name);
+  const layout=districtLabelLayout(d);
+  assert.ok(layout,d.name);
+  assert.equal(layout.size,14,d.name);
+  assert.ok(layout.angle>=-90&&layout.angle<=90,d.name);
+  assert.match(html,/textLength="[\d.]+" lengthAdjust="spacingAndGlyphs" transform="rotate\(/);
+  assert.doesNotMatch(html,/<tspan/);
   assert.equal(JSON.stringify(a),before);
  }
 });

@@ -31,7 +31,7 @@
 .cw-district-location{min-width:0}
 .cw-district-location>svg{display:block;width:100%;height:auto;overflow:hidden;border:1px solid var(--rule)}
 .cw-district-map .cw-district-outline{fill:none;stroke:rgba(75,51,33,.82);stroke-width:1.35;stroke-dasharray:1.2 4;stroke-linecap:round;vector-effect:non-scaling-stroke;pointer-events:none}
-.cw-district-map .cw-district-label{fill:rgba(248,236,211,.12);stroke:rgba(55,40,28,.68);stroke-width:.65;paint-order:stroke fill;font-family:Georgia,'Times New Roman',serif;font-weight:700;font-variant:small-caps;letter-spacing:.035em;text-anchor:middle;pointer-events:none}
+.cw-district-map .cw-district-label{fill:rgba(248,236,211,.12);stroke:rgba(55,40,28,.68);stroke-width:.65;paint-order:stroke fill;font-family:Georgia,'Times New Roman',serif;font-weight:700;font-variant:small-caps;letter-spacing:.035em;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
 
 .cw-map-pin{cursor:pointer;outline:none}
 .cw-map-pin circle,.cw-picker-point{fill:#c62828;stroke:#fff;stroke-width:2;vector-effect:non-scaling-stroke}
