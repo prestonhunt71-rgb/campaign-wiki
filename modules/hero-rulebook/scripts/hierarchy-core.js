@@ -40,6 +40,15 @@ export function buildIndex(data) {
     });
   }
   const roots = visit(data.sections);
+  return linkIndex(rows, roots);
+}
+
+export function linkIndex(rows, roots) {
+  const byRoute = new Map(rows.map(row => [row.route, row])), byHeading = new Map();
+  for (const row of rows) {
+    if (!byHeading.has(row.normalizedTitle)) byHeading.set(row.normalizedTitle, []);
+    byHeading.get(row.normalizedTitle).push(row);
+  }
   for (const [i, row] of rows.entries()) {row.previous = rows[i - 1]; row.next = rows[i + 1];}
   const escapeRegex = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const pattern = [...byHeading.keys()].sort((a, b) => b.length - a.length).map(escapeRegex).join('|');

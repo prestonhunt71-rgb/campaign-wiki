@@ -1,13 +1,14 @@
+import {organizedIndex} from './hierarchy-organization.js';
 import {buildIndex, matchTerms, searchIndex, sourceLabel, tablePath} from './hierarchy-core.js';
 
 const PREFIX = '#hero-rulebook';
 export function currentLocation() {
   if (!location.hash.startsWith(`${PREFIX}/rules/`)) return null;
   const [path, query = ''] = location.hash.slice(PREFIX.length).split('?');
-  try {return {route: decodeURI(path), readThrough: new URLSearchParams(query).get('mode') === 'read'};}
+  try {return {route: decodeURI(path), readThrough: new URLSearchParams(query).get('mode') !== 'article'};}
   catch {return {route: path, readThrough: false};}
 }
-export const routeHash = (route, readThrough = false) => `${PREFIX}${encodeURI(route)}${readThrough ? '?mode=read' : ''}`;
+export const routeHash = (route, readThrough = true) => `${PREFIX}${encodeURI(route)}${readThrough ? '' : '?mode=article'}`;
 function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -53,13 +54,13 @@ export async function loadRules() {
   return dataPromise;
 }
 
-export async function mountReader(root, {route, onLegacy} = {}) {
+export async function mountReader(root, {route, onLegacy, adapter, readThrough: initialReadThrough = true} = {}) {
   root.classList.add('hr-reader'); root.textContent = 'Loading Champions 4e rules…';
-  let index;
-  try {index = await loadRules();}
+  let index, source;
+  try {source = await loadRules(); index = organizedIndex(source, adapter?.getState?.() || {});}
   catch (error) {
     root.replaceChildren(element('h2', '', 'Rules unavailable'), element('p', '', error.message),
-      button('Retry', () => mountReader(root, {route, onLegacy})));
+      button('Retry', () => mountReader(root, {route, onLegacy, adapter})));
     return {destroy() {}};
   }
   if (!root.isConnected) return {destroy() {}};
@@ -75,6 +76,7 @@ export async function mountReader(root, {route, onLegacy} = {}) {
   navToggle.className = 'hr-nav-toggle'; navToggle.setAttribute('aria-expanded', 'false');
   toolbar.append(brand, navToggle, search);
   if (onLegacy) toolbar.append(button('Earlier reader', onLegacy));
+  if (adapter?.isGM) toolbar.append(button('New article', () => editArticle()), button('Excluded sections', () => manageExcluded()));
   const layout = element('div', 'hr-layout'), nav = element('nav', 'hr-tree'), main = element('main', 'hr-main');
   nav.setAttribute('aria-label', 'Rules hierarchy'); main.tabIndex = -1;
   const treeLinks = new Map(), branches = new Map();
@@ -94,8 +96,82 @@ export async function mountReader(root, {route, onLegacy} = {}) {
   const modal = (title, contents) => {
     const dialog = element('dialog', 'hr-dialog');
     dialog.append(element('h2', '', title), contents, button('Close', () => dialog.close()));
-    dialog.addEventListener('close', () => dialog.remove()); root.append(dialog); dialog.showModal();
+    dialog.addEventListener('close', () => dialog.remove()); root.append(dialog); dialog.showModal(); return dialog;
   };
+  async function run(action, dialog) {
+    try {await action(); dialog?.close();}
+    catch (error) {
+      const target = dialog || main;
+      target.querySelector('.hr-action-error')?.remove();
+      const message = element('p', 'hr-action-error', error.message); message.setAttribute('role','alert'); target.append(message);
+    }
+  }
+  function field(form, label, input) {
+    input.setAttribute('aria-label', label);
+    const wrapper = element('label', 'hr-editor-field', label); wrapper.append(input); form.append(wrapper); return input;
+  }
+  function parentSelect(form, selected, forbidden = new Set()) {
+    const select = element('select'); select.name = 'parent';
+    const top = element('option', '', 'Top level'); top.value = ''; select.append(top);
+    for (const row of index.rows) if (!forbidden.has(row.route)) {
+      const option = element('option', '', row.ancestry.join(' › ')); option.value = row.route; select.append(option);
+    }
+    select.value = selected || ''; return field(form, 'Parent article', select);
+  }
+  function saveForm(title, form, command) {
+    const dialog = modal(title, form), save = element('button', '', 'Save'); save.type='submit'; form.append(save);
+    form.addEventListener('submit', event => {event.preventDefault(); save.disabled=true;
+      run(async () => {await adapter.save(command());}, dialog).finally(() => {save.disabled=false;});
+    });
+    return dialog;
+  }
+  function editArticle(row) {
+    const form = element('form', 'hr-editor'), title = element('input'), text = element('textarea');
+    title.required = true; title.value = row?.title || ''; text.value = row?.section.text || ''; text.rows=10;
+    field(form, 'Article title', title); field(form, 'Article text', text);
+    const parent = !row ? parentSelect(form, current?.route) : null;
+    saveForm(row ? 'Edit custom article' : 'New article', form, () => row ?
+      {type:'edit',route:row.route,heading:title.value,text:text.value} :
+      {type:'create',id:crypto.randomUUID(),heading:title.value,text:text.value,parent:parent.value || null});
+  }
+  function organize(row) {
+    const form = element('form', 'hr-editor');
+    const descendants = new Set([row.route]); const walk = node => {for (const child of node.children) {descendants.add(child.route); walk(child);}}; walk(row);
+    const parent = parentSelect(form, row.parent?.route, descendants);
+    form.append(element('p','','Choose child sections below. Selected sections move here; unchecked current children move to the top level.'));
+    const filter = element('input'); filter.type='search'; filter.placeholder='Filter sections'; filter.setAttribute('aria-label','Filter child sections'); form.append(filter);
+    const choices = element('div','hr-child-choices'), selected = new Set(row.children.map(child=>child.route));
+    const forbidden = new Set([row.route, ...row.ancestors.map(a=>a.route)]);
+    for (const child of index.rows) if (!forbidden.has(child.route)) {
+      const label = element('label'), check = element('input'); check.type='checkbox'; check.checked=selected.has(child.route); check.value=child.route;
+      label.append(check, document.createTextNode(child.ancestry.join(' › '))); choices.append(label);
+      check.addEventListener('change',()=>check.checked?selected.add(child.route):selected.delete(child.route));
+    }
+    filter.addEventListener('input',()=>{for (const label of choices.children) label.hidden=!label.textContent.toLowerCase().includes(filter.value.toLowerCase());});
+    form.append(choices);
+    saveForm(`Organize: ${row.title}`,form,()=>({type:'organize',route:row.route,parent:parent.value||null,children:[...selected]}));
+  }
+  function houseRules(row) {
+    const form=element('form','hr-editor'), text=element('textarea'); text.rows=12; text.value=row.houseRule||'';
+    field(form,'House Rules (shown to players with this section)',text);
+    saveForm(`House Rules: ${row.title}`,form,()=>({type:'house',route:row.route,text:text.value}));
+  }
+  function exclude(row) {
+    const content=element('div'); content.append(element('p','',`Exclude “${row.title}” from the sidebar, search, links, and reading view? Its children remain available. You can restore the section later.`));
+    const dialog=modal('Remove section',content);
+    content.append(button('Remove this section',()=>run(()=>adapter.save({type:'exclude',route:row.route}),dialog)));
+  }
+  function manageExcluded() {
+    const content=element('div');
+    const removed=index.all.filter(row=>index.excluded.has(row.route));
+    if (!removed.length) content.append(element('p','','No sections are excluded.'));
+    const dialog=modal('Excluded sections',content);
+    for (const row of removed) {
+      const item=element('p','',`${row.title} · ${row.customId ? 'Custom article' : sourceLabel(row.section)} `);
+      item.append(button('Restore',()=>run(()=>adapter.save({type:'restore',route:row.route}),dialog))); content.append(item);
+    }
+  }
+
   function disambiguate(match) {
     const list = element('ul');
     for (const candidate of match.candidates) {
@@ -107,13 +183,26 @@ export async function mountReader(root, {route, onLegacy} = {}) {
     const section = element('article', 'hr-article'); section.id = `section-${encodeURIComponent(row.route)}`;
     section.dataset.route = row.route;
     const heading = element(nested ? 'h2' : 'h1', '', row.title);
-    section.append(heading, element('p', 'hr-meta', sourceLabel(row.section)));
+    section.append(heading, element('p', 'hr-meta', row.customId ? 'Custom article' : sourceLabel(row.section)));
+    if (adapter?.isGM) {
+      const actions = element('div', 'hr-section-actions');
+      actions.append(button('Organize', () => organize(row)), button('House Rules', () => houseRules(row)),
+        button('Show to Players', () => run(() => adapter.show(row.route))), button('Remove section', () => exclude(row)));
+      if (row.customId) actions.append(button('Edit article', () => editArticle(row)));
+      section.append(actions);
+    }
+    let localContents;
     if (row.children.length) {
       const contents = element('nav', 'hr-local-contents'); contents.setAttribute('aria-label', `Contents of ${row.title}`);
       contents.append(element('strong', '', 'In this section'));
       const list = element('ul');
-      for (const child of row.children) {const item = element('li'); item.append(ruleLink(child)); list.append(item);}
-      contents.append(list); section.append(contents);
+      for (const child of row.children) {
+        const item = element('li'), tile = ruleLink(child), icon = element('span', 'hr-tile-icon', '§'), copy = element('span', 'hr-tile-copy');
+        icon.setAttribute('aria-hidden', 'true'); tile.className = 'hr-tile';
+        copy.append(element('strong', '', child.title), element('small', '', child.customId ? 'Custom article' : sourceLabel(child.section)));
+        tile.replaceChildren(icon, copy); item.append(tile); list.append(item);
+      }
+      contents.append(list); localContents = contents;
     }
     if (row.section.text) {
       const prose = element('div', 'hr-prose', row.section.text);
@@ -131,24 +220,29 @@ export async function mountReader(root, {route, onLegacy} = {}) {
       try {image.src = new URL(`../${tablePath(table)}`, import.meta.url).href;} catch {missing(); section.append(figure); continue;}
       enlarge.append(image); figure.append(enlarge, element('figcaption', 'hr-meta', caption)); section.append(figure);
     }
+    if (row.houseRule) {
+      const house = element('aside', 'hr-house-rule'); house.append(element('strong', '', 'House Rules'), element('div', 'hr-prose', row.houseRule)); section.append(house);
+    }
+    if (localContents) section.append(localContents);
     if (nested) {const permalink = ruleLink(row, 'Open this section'); permalink.className = 'hr-permalink'; section.append(permalink);}
     return section;
   }
   function renderRoute() {
     if (disposed) return;
     const state = currentLocation();
-    const selectedRoute = state?.route || route || index.roots[0].route;
-    current = index.byRoute.get(selectedRoute); readThrough = state?.readThrough || false;
+    const selectedRoute = state?.route || route || index.roots[0]?.route;
+    current = index.byRoute.get(selectedRoute); readThrough = state?.readThrough ?? true;
     main.replaceChildren();
     for (const link of treeLinks.values()) link.removeAttribute('aria-current');
-    if (!current) {main.append(element('h1', '', 'Section not found'), element('p', '', 'Choose a section from the contents or search the rules.')); return;}
+    if (!current) {main.append(element('h1', '', index.excluded.has(selectedRoute) ? 'Section excluded' : 'Section not found'), element('p', '', 'Choose a section from the contents or search the rules.')); return;}
     treeLinks.get(current.route).setAttribute('aria-current', 'page');
+    if (branches.has(current.route)) branches.get(current.route).open = true;
     for (const ancestor of current.ancestors) branches.get(ancestor.route).open = true;
     const crumbs = element('nav', 'hr-breadcrumbs'); crumbs.setAttribute('aria-label', 'Breadcrumbs');
     for (const ancestor of current.ancestors) crumbs.append(ruleLink(ancestor), document.createTextNode(' › '));
     crumbs.append(element('span', '', current.title));
     const tools = element('div', 'hr-reading-tools');
-    const toggle = button(readThrough ? 'Article mode' : 'Read-through mode', () => navigate(current.route, !readThrough));
+    const toggle = button(readThrough ? 'Show section only' : 'Show children', () => navigate(current.route, !readThrough));
     toggle.setAttribute('aria-pressed', String(readThrough));
     tools.append(toggle, button('Copy section link', async () => {
       const url = new URL(location.href); url.hash = routeHash(current.route, readThrough);
@@ -167,13 +261,13 @@ export async function mountReader(root, {route, onLegacy} = {}) {
       for (const ref of backlinks) {const row = index.byRoute.get(ref), item = element('li'); item.append(ruleLink(row, row.ancestry.join(' › '))); list.append(item);}
       details.append(summary, list); main.append(details);
     }
-    const sequence = element('nav', 'hr-sequence'); sequence.setAttribute('aria-label', 'Book order');
+    const sequence = element('nav', 'hr-sequence'); sequence.setAttribute('aria-label', 'Sidebar order');
     if (current.previous) sequence.append(ruleLink(current.previous, `← ${current.previous.title}`));
     if (current.next) sequence.append(ruleLink(current.next, `${current.next.title} →`));
     main.append(sequence); main.scrollTop = 0;
     treeLinks.get(current.route).scrollIntoView({block: 'nearest'});
   }
-  function navigate(target, mode = false) {
+  function navigate(target, mode = true) {
     const hash = routeHash(target, mode);
     history.pushState(null, '', hash); renderRoute();
     root.classList.remove('hr-nav-open'); navToggle.setAttribute('aria-expanded', 'false'); main.focus({preventScroll: true});
@@ -197,10 +291,16 @@ export async function mountReader(root, {route, onLegacy} = {}) {
   const keydown = event => {if ((event.ctrlKey || event.metaKey) && event.key === 'k') {event.preventDefault(); input.focus();}};
   root.addEventListener('keydown', keydown);
   window.addEventListener('popstate', renderRoute); window.addEventListener('hashchange', renderRoute);
-  if (route) history.replaceState(null, '', routeHash(route));
-  else if (!currentLocation()) history.replaceState(null, '', routeHash(index.roots[0].route));
+  if (route) history.replaceState(null, '', routeHash(route, initialReadThrough));
+  else if (!currentLocation() && index.roots.length) history.replaceState(null, '', routeHash(index.roots[0].route));
   renderRoute();
-  return {index, navigate, destroy() {
+  return {get index() {return index;}, navigate, refresh(state) {
+    index = organizedIndex(source, state);
+    const expanded = [...branches].filter(([,branch]) => branch.open).map(([key]) => key);
+    treeLinks.clear(); branches.clear(); nav.replaceChildren(element('h2', '', 'Rules contents')); tree(index.roots, nav);
+    for (const key of expanded) if (branches.has(key)) branches.get(key).open = true;
+    renderRoute();
+  }, destroy() {
     disposed = true; window.removeEventListener('popstate', renderRoute); window.removeEventListener('hashchange', renderRoute);
     root.removeEventListener('click', click); root.removeEventListener('keydown', keydown);
   }};
