@@ -1,0 +1,3 @@
+# Keep the authoritative source and retained images byte-for-byte across platforms.
+data/hero-rulebook-rules.organized-v7.json -text
+images/*.webp binary

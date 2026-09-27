@@ -1,0 +1,23 @@
+{
+  "id": "hero-rulebook",
+  "title": "HERO Rulebook",
+  "description": "Champions 4e recursive rules reference with full-text search, automatic cross-links, and retained rule tables. Includes the earlier reader for existing saved material.",
+  "version": "1.1.0",
+  "authors": [
+    {
+      "name": "Campaign Tools"
+    }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13.348",
+    "maximum": "13"
+  },
+  "esmodules": [
+    "scripts/standalone.js"
+  ],
+  "styles": [
+    "styles/rulebook.css",
+    "styles/hierarchy.css"
+  ]
+}

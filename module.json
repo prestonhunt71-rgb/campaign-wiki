@@ -17,8 +17,7 @@
     "scripts/campaign-wiki.js"
   ],
   "styles": [
-    "styles/campaign-wiki.css",
-    "styles/rulebook.css"
+    "styles/campaign-wiki.css"
   ],
   "url": "https://github.com/prestonhunt71-rgb/campaign-wiki",
   "manifest": "https://github.com/prestonhunt71-rgb/campaign-wiki/releases/latest/download/module.json",

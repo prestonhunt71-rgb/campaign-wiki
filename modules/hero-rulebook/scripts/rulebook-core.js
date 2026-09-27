@@ -16,9 +16,18 @@ export function searchRules(index,query,{overrides={},includeHouseRules=true}={}
 export function safeImagePath(path){const s=String(path??'').trim();return s&&!/[<>"\x00-\x1f]/.test(s)&&!s.startsWith('//')&&!/^(?:javascript|data|vbscript|file):/i.test(s)&&(!/^[a-z][a-z\d+.-]*:/i.test(s)||/^https?:\/\//i.test(s))?s:'';}
 export function validateBook(book){if(book?.schemaVersion!==1||!/^[-a-z0-9]+$/i.test(book.id||'')||['constructor','prototype','__proto__'].includes(book.id)||!Array.isArray(book.pages)||!book.pages.length)throw new Error('Invalid rulebook manifest.');const ids=new Set();for(const p of book.pages){if(!/^[a-z0-9-]+$/i.test(p.id)||ids.has(p.id))throw new Error('Invalid or duplicate page ID.');ids.add(p.id);}return book;}
 export function collectSections(pages,refs,overrides={}){return refs.map(ref=>{const page=pages.find(p=>p.id===ref.pageId);if(!page)return null;const section=effectivePage(page,overrides).sections.find(s=>s.id===ref.sectionId);if(!section)return null;const {houseRule,...source}=section;return {pageId:page.id,label:page.label,...source,...(ref.includeHouseRule&&houseRule?{houseRule}:{})};}).filter(Boolean);}
+function ruleTextHtml(text,linkText){
+ const blocks=[],lines=[];
+ const flush=()=>{if(lines.length){blocks.push(linkText(lines.join('\n')));lines.length=0;}};
+ for(const line of String(text??'').replace(/\r\n?/g,'\n').split('\n')){
+  const heading=line.match(/^(#{3,4})[ \t]+(\S.*)$/);
+  if(heading){flush();const level=heading[1].length;blocks.push(`<h${level}>${linkText(heading[2].trim())}</h${level}>`);}else lines.push(line);
+ }
+ flush();return blocks.join('');
+}
 export function sectionHtml(section,{linkText=text=>escapeHtml(text).replace(/\n/g,'<br>'),imageURL=src=>src,controls=''}={}){
  const images=(section.images||[]).filter(im=>safeImagePath(im.src));const figures=position=>images.filter(im=>(im.position||'after')===position).map(im=>`<figure><a href="${escapeHtml(imageURL(im.src))}" target="_blank" rel="noopener"><img loading="lazy" src="${escapeHtml(imageURL(im.src))}" alt="${escapeHtml(im.caption||section.title)}"></a>${im.caption?`<figcaption>${escapeHtml(im.caption)}</figcaption>`:''}${im.searchText?`<details class="rb-image-ocr"><summary>Searchable image text (OCR)</summary><div class="rb-text">${linkText(im.searchText)}</div></details>`:''}</figure>`).join('');
- return `<section class="rb-section" id="rb-${escapeHtml(section.id)}"><header><h2>${escapeHtml(section.title)}</h2><div class="rb-actions">${controls}</div></header>${figures('before')}<div class="rb-text">${linkText(section.text||'')}</div>${figures('after')}${section.houseRule?.trim()?`<aside class="rb-house"><strong>House rule</strong><div>${linkText(section.houseRule)}</div></aside>`:''}</section>`;
+ return `<section class="rb-section" id="rb-${escapeHtml(section.id)}"><header><h2>${escapeHtml(section.title)}</h2><div class="rb-actions">${controls}</div></header>${figures('before')}<div class="rb-text">${ruleTextHtml(section.text,linkText)}</div>${figures('after')}${section.houseRule?.trim()?`<aside class="rb-house"><strong>House rule</strong><div>${linkText(section.houseRule)}</div></aside>`:''}</section>`;
 }
 export function continuationChain(rows,ref){
  const key=r=>`${r.pageId}:${r.sectionId}`,byKey=new Map(rows.map(r=>[key(r),r]));let current=byKey.get(key(ref));if(!current)return[];const seen=new Set();

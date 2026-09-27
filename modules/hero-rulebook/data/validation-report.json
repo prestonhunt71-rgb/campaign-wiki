@@ -1,0 +1,11 @@
+{
+  "sections": 630,
+  "topLevelSections": 24,
+  "routes": 630,
+  "retainedTableReferences": 169,
+  "uniqueTableAssets": 169,
+  "duplicateHeadingNames": 63,
+  "resolvedBacklinks": 2186,
+  "sourceSHA256": "ca888fb273e9acd736b94af63157828ff598ebf632c2869b906bd9ec463decc0",
+  "sourcePreservedByteForByte": true
+}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {effectivePage,searchRules,collectSections,sectionHtml,safeImagePath,validateBook} from '../scripts/rulebook-core.js';
+import {effectivePage,searchRules,collectSections,sectionHtml,safeImagePath,validateBook} from '../modules/hero-rulebook/scripts/rulebook-core.js';
 import {readFileSync,existsSync} from 'node:fs';
 const page={id:'p001',label:'1',sections:[{id:'a',title:'Grab',text:'Strength contest',images:[{src:'images/a.webp',caption:'A'},{src:'images/b.webp',caption:'B'}]},{id:'b',title:'Throw',text:'Throw a target',images:[]}]};
 test('house rules render only where entered and do not spread into collected sections',()=>{const overrides={a:{houseRule:'Use our house rule'}};const edited=effectivePage(page,overrides);assert.match(sectionHtml(edited.sections[0]),/House rule/);assert.doesNotMatch(sectionHtml(edited.sections[1]),/House rule/);assert.equal(page.sections[0].houseRule,undefined);assert.equal(collectSections([page],[{pageId:'p001',sectionId:'a'}],overrides)[0].houseRule,undefined);assert.equal(collectSections([page],[{pageId:'p001',sectionId:'a',includeHouseRule:true}],overrides)[0].houseRule,'Use our house rule');});

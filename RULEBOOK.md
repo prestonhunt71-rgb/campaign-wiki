@@ -1,20 +1,17 @@
-# Rulebook reader
+# Standalone HERO Rulebook
 
-Open Campaign Wiki > Rulebook. As GM, use Import batch for a prepared `hero-rulebook-batch-v1` JSON file, or Add page for manual entry. Manual `## Heading` lines create sections. Printed page labels stay separate from page IDs.
+Install both `campaign-wiki-standalone.zip` (the wiki with reader integration removed) and `hero-rulebook-standalone.zip` (the new reader module). Enable HERO Rulebook in Manage Modules and reload as GM first. Rulebook has its own button immediately below Campaign Wiki. It works without Campaign Wiki enabled as well.
 
-The reader supports search, contents, glossary, favorites, section images and searchable image transcripts, GM Show players, optional section house rules, review status, and collections saved as wiki articles. Edit section can link a passage to an earlier section for cross-page reading. Existing wiki article linking also applies to rule text.
+On first GM startup, HERO Rulebook copies the old content folder, edits, house rules, review records, glossary, removed-page choices and saved collections into its own settings. Each user's favorites copy on their next startup. Source settings and old wiki collection articles are retained as backups. Old wiki collection articles no longer render linked rulebook content and may be deleted manually after checking the migrated collections. Migrated collections are GM-only, avoiding accidental exposure of previously private wiki articles. Show players remains available for individual rules.
 
-## Remove irrelevant pages
+The rulebook no longer links to wiki articles or saves collections into the wiki. Use Saved collections within Rulebook. Import content into the separate reader; no PDF or ingested book content is distributed in either ZIP.
 
-As GM, choose Manage pages, uncheck unwanted pages, and Save. Removed pages are excluded from rulebook search, contents, glossary and favorites. Collected references display an unavailable-source notice. Recheck a page to restore it. This selection applies to everyone in the world and survives batch imports for the same book ID.
+## Headings and cleanup
 
-Removal does not delete Forge files or renumber pages. Notes and source content are retained. Page selections are stored in world settings and are not currently included in Export notes. Existing wiki collection articles remain separate articles; delete those in the wiki if no longer wanted.
+`## Heading` starts a section when adding a page. `### Subheading` and `#### Smaller subheading` render inside the current section and stay searchable. Edit section supports these subheading markers in Text. Existing OCR sections are not automatically merged.
 
-## Private content and loading
+Manage pages lets the GM uncheck irrelevant pages. They disappear from search, contents, glossary, favorites and collected source text. Recheck to restore. Numbering and source files are preserved. Removing pages does not reclaim Forge storage. Page choices are world settings, not part of Export notes.
 
-The repository and module bundle contain no rulebook PDF or ingested book data. Import privately supplied content separately. Pages load on demand, images load lazily, and the search index loads when search is first used. OCR requires proofreading, especially numeric tables and fractions.
+## Build
 
-## Bundle
-
-Run `python scripts/bundle-rulebook.py` from the repository root. This creates `campaign-wiki-rulebook.zip` with the reader preview version `3.0.52-rulebook.3`. Preview manifests omit release download URLs. ZIP files are ignored by Git; distribution content must be supplied separately.
-
+Run `python scripts/bundle-rulebook.py` to build both code-only ZIPs. Rulebook source lives in `modules/hero-rulebook`; it has its own manifest, styles, scripts and persistence namespace. Campaign Wiki does not load those files. Run `node --test test/*.test.mjs` for the combined development test suite.
