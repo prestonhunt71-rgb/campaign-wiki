@@ -32,20 +32,20 @@ export function requestTelegramOpen(articleId) {
   opening.set(articleId,task);return task;
 }
 function sendOpenRequest(articleId) {
-  if(!adapter)return Promise.reject(new Error('Telegram delivery is not ready.'));
+  if(!adapter)return Promise.reject(new Error('Message delivery is not ready.'));
   const data=adapter.getDatabase(),article=data.articles[articleId];
   if(game.user.isGM)return Promise.resolve();
   if(!article)return Promise.reject(new Error('Article unavailable.'));
   if(!isActiveTelegram(data,article))return Promise.resolve();
   if(!mayReceiveTelegram(data,article,game.user,users()))return Promise.reject(new Error('Article unavailable.'));
-  if(!authority())return Promise.reject(new Error('A Game Master must be connected to deliver this telegram. It remains unread.'));
+  if(!authority())return Promise.reject(new Error('A Game Master must be connected to deliver this message. It remains unread.'));
   const nonce=foundry.utils.randomID();
   return new Promise((resolve,reject)=>{
     const finish=(error)=>{
       clearTimeout(timer);pending.delete(nonce);
       if(error)reject(error);else resolve();
     };
-    const timer=setTimeout(()=>finish(new Error('Telegram delivery could not be confirmed. Please try opening it again.')),12000);
+    const timer=setTimeout(()=>finish(new Error('Message delivery could not be confirmed. Please try opening it again.')),12000);
     pending.set(nonce,reply=>finish(reply.ok?null:new Error('Article unavailable.')));
     game.user.setFlag(MODULE,REQUEST,{articleId,nonce}).catch(finish);
   });

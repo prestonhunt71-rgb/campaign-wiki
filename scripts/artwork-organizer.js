@@ -5,8 +5,14 @@ export const IMAGE_ROOT="root:images";
 export function safeFolderName(value){return String(value??"").trim().replace(/[\\/:*?"<>|]/g,"-").replace(/\s+/g," ").replace(/[. ]+$/g,"")||"Uncategorized";}
 export function assetFilename(value){try{return decodeURIComponent(new URL(String(value),"https://campaign-wiki.invalid/").pathname.split("/").pop()||"");}catch{return String(value??"").split(/[\\/]/).pop()||"";}}
 export function pathWithinRoot(value,rootPath){let decoded=String(value??"");try{decoded=decodeURIComponent(decoded);}catch{}decoded=decoded.replace(/\\/g,"/");const needle=String(rootPath).replace(/^\/+|\/+$/g,"");const index=decoded.toLocaleLowerCase().indexOf(needle.toLocaleLowerCase());return index<0?null:decoded.slice(index).split(/[?#]/)[0];}
-export function artworkDestinations(database,article,rootPath){return[...new Set(articlePaths(database,article).filter(path=>path[0]===IMAGE_ROOT).map(path=>[rootPath,...path.slice(1,-1).map(id=>safeFolderName(database.articles[id]?.title))].join("/")))];}
-export function sidebarParentForArtworkPath(database,value,rootPath){const relative=pathWithinRoot(value,rootPath);if(!relative)return IMAGE_ROOT;const segments=relative.slice(String(rootPath).replace(/\/+$/g,"").length).split("/").filter(Boolean).slice(0,-1);let parentId=IMAGE_ROOT;for(const segment of segments){const child=childrenOf(database,parentId).find(article=>safeFolderName(article.title).toLocaleLowerCase()===segment.toLocaleLowerCase());if(!child)break;parentId=child.id;}return parentId;}
+function artworkFolderSegment(database,id){
+  const article=database.articles[id],name=String(article?.title??'').trim().toLowerCase();
+  const media=article?.parentIds.some(parentId=>{const parent=database.articles[parentId];return parent&&parent.title.trim().toLowerCase()==='media'&&parent.parentIds.includes(IMAGE_ROOT);});
+  if(media&&['mail','message','messages','messaging service'].includes(name))return name==='mail'?'mail':'messages';
+  return safeFolderName(article?.title);
+}
+export function artworkDestinations(database,article,rootPath){return[...new Set(articlePaths(database,article).filter(path=>path[0]===IMAGE_ROOT).map(path=>[rootPath,...path.slice(1,-1).map((id,index)=>index===0&&['mail','messages'].includes(artworkFolderSegment(database,path[2]))?'media':artworkFolderSegment(database,id))].join("/")))];}
+export function sidebarParentForArtworkPath(database,value,rootPath){const relative=pathWithinRoot(value,rootPath);if(!relative)return IMAGE_ROOT;const segments=relative.slice(String(rootPath).replace(/\/+$/g,"").length).split("/").filter(Boolean).slice(0,-1);let parentId=IMAGE_ROOT;for(const segment of segments){const child=childrenOf(database,parentId).find(article=>artworkFolderSegment(database,article.id).toLocaleLowerCase()===segment.toLocaleLowerCase());if(!child)break;parentId=child.id;}return parentId;}
 export function titleFromArtworkPath(value){return assetFilename(value).replace(/\.[^.]+$/," ").replace(/[_-]+/g," ").replace(/(?<=[a-z0-9])(?=[A-Z])/g," ").replace(/\s+/g," ").trim()||"Unclassified Artwork";}
 
 export function buildArtworkPlan(database,rootPath){

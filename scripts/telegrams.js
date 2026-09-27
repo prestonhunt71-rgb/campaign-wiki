@@ -1,22 +1,29 @@
 // Telegram state is derived from Media ancestry, Actor parents, aliases and currentStatus.
 const key = value => String(value ?? '').trim().toLowerCase();
 const access = new WeakMap();
-export function isTelegram(data, article) {
+export const DELIVERY_TYPES = [
+  {id:'telegrams',title:'Telegrams',names:['telegram','telegrams','telegraph','telegraphs'],notice:'TELEGRAM'},
+  {id:'mail',title:'Mail',names:['mail'],notice:'MAIL'},
+  {id:'messages',title:'Messaging service',names:['message','messages','messaging service'],notice:'MESSAGE'}
+];
+export function deliveryType(data, article) {
   if (!article || article.organizer) return false;
   const visit = (id, seen = new Set()) => {
     if (seen.has(id)) return false;
     const parent = data.articles[id];
     if (!parent) return false;
     const next = new Set(seen).add(id);
-    const category = id === 'organizer:telegrams' || ['telegram','telegrams'].includes(key(parent.title));
+    const category = DELIVERY_TYPES.find(type => id === 'organizer:' + type.id || type.names.includes(key(parent.title)));
     if (category && parent.parentIds.some(mediaId => {
       const media = data.articles[mediaId];
       return media && (mediaId === 'organizer:media' || key(media.title) === 'media') && media.parentIds.includes('root:images');
-    })) return true;
-    return parent.parentIds.some(parentId => visit(parentId, next));
+    })) return category;
+    return parent.parentIds.map(parentId => visit(parentId, next)).find(Boolean);
   };
-  return article.parentIds.some(id => visit(id));
+  return article.parentIds.map(id => visit(id)).find(Boolean) || null;
 }
+// Legacy API names cover all delivery types so privacy and delivery checks stay shared.
+export const isTelegram = (data, article) => Boolean(deliveryType(data, article));
 export const isActiveTelegram = (data, article) => isTelegram(data, article) && (article.currentStatus || 'active') === 'active';
 export const isGametable = user => key(user?.name) === 'gametable';
 export function telegramRecipient(data, article, users = []) {
@@ -32,8 +39,8 @@ export function mayReceiveTelegram(data, article, user, users) {
 export function telegramWarning(data, article, users) {
   if (!isActiveTelegram(data, article)) return '';
   const {matches, recipient} = telegramRecipient(data, article, users);
-  if (!matches.length) return 'Telegram has no parent Actor assigned as a player character. Check the parent article Foundry Actor link and the assigned character in Foundry User Configuration. Delivery is disabled.';
-  if (!recipient) return 'Telegram recipient is ambiguous: use exactly one parent Actor assigned to exactly one player. Delivery is disabled.';
+  if (!matches.length) return (deliveryType(data, article)?.title || 'Telegram') + ' has no parent Actor assigned as a player character. Check the parent article Foundry Actor link and the assigned character in Foundry User Configuration. Delivery is disabled.';
+  if (!recipient) return (deliveryType(data, article)?.title || 'Telegram') + ' recipient is ambiguous: use exactly one parent Actor assigned to exactly one player. Delivery is disabled.';
   return '';
 }
 export function telegramVisibility(data, article) {
@@ -58,8 +65,8 @@ export function telegramOldestFirst(a, b) {
   return String(a.date || a.createdAt || '').localeCompare(String(b.date || b.createdAt || '')) ||
     String(a.createdAt || '').localeCompare(String(b.createdAt || '')) || a.id.localeCompare(b.id);
 }
-export function waitingTelegram(data, user, users) {
-  return Object.values(data.articles).filter(article => isActiveTelegram(data, article) && mayReceiveTelegram(data, article, user, users)).sort(telegramOldestFirst)[0] || null;
+export function waitingTelegram(data, user, users, typeId = null) {
+  return Object.values(data.articles).filter(article => isActiveTelegram(data, article) && (!typeId || deliveryType(data, article)?.id === typeId) && mayReceiveTelegram(data, article, user, users)).sort(telegramOldestFirst)[0] || null;
 }
 export function markTelegramOpened(data, articleId, user, users) {
   const article = data.articles[articleId];
@@ -69,11 +76,14 @@ export function markTelegramOpened(data, articleId, user, users) {
   return true;
 }
 export function telegramNoticeHtml(data, user, users) {
-  const article = waitingTelegram(data, user, users);
+  return DELIVERY_TYPES.map(type => deliveryNoticeHtml(data, user, users, type)).join('');
+}
+function deliveryNoticeHtml(data, user, users, type) {
+  const article = waitingTelegram(data, user, users, type.id);
   if (!article) return '';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const addressee = (Array.isArray(article.aliases) ? article.aliases : []).map(alias => String(alias ?? '').trim()).find(Boolean);
-  return '<div class="cw-telegram-delivery"><button type="button" class="cw-telegram-notice" data-action="open" data-id="' + esc(article.id) + '"><span aria-hidden="true">✉</span> ' + esc(addressee ? 'TELEGRAM FOR ' + addressee.toUpperCase() + '!' : 'TELEGRAM WAITING!') + '</button></div>';
+  return '<div class="cw-telegram-delivery"><button type="button" class="cw-telegram-notice" data-action="open" data-id="' + esc(article.id) + '"><span aria-hidden="true">✉</span> ' + esc(addressee ? type.notice + ' FOR ' + addressee.toUpperCase() + '!' : type.notice + ' WAITING!') + '</button></div>';
 }
 
 export function setupTelegramEditor(element, data, article, getUsers) {

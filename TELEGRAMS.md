@@ -29,3 +29,9 @@ The command npm run check runs syntax checks and the full regression suite. Tele
 Live Foundry/Forge testing is still required before campaign use. The packaged ZIP is a local build; no GitHub release or live world was updated.
 
 Foundry API reference: https://foundryvtt.com/api/v13/classes/foundry.documents.User.html
+
+## Mail and Messaging service
+
+The GM's next world reload adds Media → Mail and Media → Messaging service alongside Telegrams. Existing Messages categories are also recognized. Their image pickers use media/mail and media/messages beneath the campaign wiki artwork folder.
+
+Create articles under the appropriate category and the recipient's Actor, exactly as for Telegrams. The first Addressed to name appears on the delivery notice. Each type has its own sidebar button and oldest-first queue. Opening marks it inactive; recipient validation, privacy, GM confirmation, and newest-five archives follow the Telegram rules.

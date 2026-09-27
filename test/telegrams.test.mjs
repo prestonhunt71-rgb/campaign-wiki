@@ -290,3 +290,37 @@ test('telegram article labels its preserved aliases as Addressed to',()=>{
  f.data.articles.raven.aliases=['Regular alias'];
  assert.match(r.articleHtml(f.data,f.data.articles.raven,null,new Set(),false),/<h2>Aliases<\/h2>/);
 });
+
+for(const [category,title,notice] of [['mail','Mail','MAIL'],['messages','Messaging service','MESSAGE']]){
+ test(title+' shares recipient protection, addressing, opening, and archive behavior',async()=>{
+  const f=fixture();f.add(category,{title,organizer:true,parentIds:['media']});
+  const a=f.telegram(category+'-first',{parentIds:[category,'raven'],date:'1937-01-01'});
+  f.telegram(category+'-later',{parentIds:[category,'raven'],date:'1937-02-01'});
+  f.telegram('original');
+  const html=telegramNoticeHtml(f.data,f.paul,f.users);
+  assert.match(html,new RegExp(notice+' FOR KELLY WALTER!'));
+  assert.match(html,/TELEGRAM FOR KELLY WALTER!/);
+  assert.ok(html.includes('data-id="'+a.id+'"'));assert.ok(!html.includes('data-id="'+category+'-later"'));
+  for(const user of [f.murray,f.table,null])assert.equal(telegramView(f.data,user,f.users).articles[a.id],undefined);
+  assert.equal(markTelegramOpened(f.data,a.id,f.murray,f.users),false);
+  assert.equal(markTelegramOpened(f.data,a.id,f.paul,f.users),true);
+  assert.equal(a.currentStatus,'inactive');
+  assert.ok(telegramNoticeHtml(f.data,f.paul,f.users).includes('data-id="'+category+'-later"'));
+  assert.deepEqual(core.linkArticleText(f.data,a,['raven']).linkedIds,[]);
+  const r=renderer(f,f.paul),view=r.database();
+  assert.ok(r.relationshipSections(view,view.articles.raven,new Set(),true).includes('>'+title+'</h2>'));
+  const artwork=await import('../scripts/artwork-organizer.js');
+  assert.deepEqual(artwork.artworkDestinations(f.data,a,'campaign-wiki'),['campaign-wiki/media/'+category]);
+  assert.equal(artwork.sidebarParentForArtworkPath(f.data,'campaign-wiki/media/'+category+'/sample.png','campaign-wiki'),category);
+ });
+}
+test('all three delivery types have independent notices and missing recipients fail closed',()=>{
+ const f=fixture();f.telegram('original');
+ for(const [id,title] of [['mail','Mail'],['messages','Messages']]){
+  f.add(id,{title,organizer:true,parentIds:['media']});
+  f.telegram(id+'-item',{parentIds:[id,'raven']});
+  const invalid=f.telegram(id+'-invalid',{parentIds:[id]});
+  assert.match(telegramWarning(f.data,invalid,f.users),/no parent Actor/);
+ }
+ assert.equal((telegramNoticeHtml(f.data,f.paul,f.users).match(/cw-telegram-notice/g)||[]).length,3);
+});
