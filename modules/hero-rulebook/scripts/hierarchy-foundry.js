@@ -1,6 +1,5 @@
 import {mountReader, currentLocation, loadRules} from './hierarchy-reader.js';
 import {changeOrganization, emptyOrganization, organizedIndex} from './hierarchy-organization.js';
-import {openRulebook as openLegacyRulebook} from './rulebook.js';
 const M='hero-rulebook'; let reader, saveQueue=Promise.resolve();
 const organization=()=>game.settings.get(M,'organizationV7') || emptyOrganization();
 export function saveOrganization(command) {
@@ -38,7 +37,12 @@ class HierarchyReader extends Application {
   async activateListeners(html) {
     super.activateListeners(html);
     this.controller=await mountReader(html[0],{route:this.initialRoute,readThrough:this.initialReadThrough,
-      onLegacy:()=>openLegacyRulebook(),adapter:{isGM:game.user.isGM,getState:organization,save:saveOrganization,show:showSection}});
+      adapter:{isGM:game.user.isGM,getState:organization,save:saveOrganization,show:showSection,browse:async target=>{
+        if(!game.user.isGM)throw Error('Only the GM may browse image assets.');
+        const Picker=globalThis.FilePicker??globalThis.foundry?.applications?.apps?.FilePicker?.implementation;
+        if(!Picker?.browse)throw Error('Asset browsing is unavailable; enter an image path or URL.');
+        return Picker.browse(globalThis.ForgeVTT?.usingTheForge?'forgevtt':'data',target);
+      }}});
     this.initialRoute=undefined; this.initialReadThrough=undefined;
   }
   async close(options) {this.controller?.destroy(); return super.close(options);}
