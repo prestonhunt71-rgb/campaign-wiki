@@ -1,4 +1,4 @@
-# HERO Rulebook 1.3.1 — Champions Fourth Edition
+# HERO Rulebook 1.3.2 — Champions Fourth Edition
 
 A standalone Foundry VTT 13 rulebook with Campaign Wiki-style navigation and editing. The supplied v7 JSON is preserved byte-for-byte, including all OCR corrections, 630 sections, and 169 retained table images. World customization is stored separately.
 
@@ -10,6 +10,8 @@ A standalone Foundry VTT 13 rulebook with Campaign Wiki-style navigation and edi
 4. Click **Rulebook**, or use its **Open Rulebook** setting.
 
 The ZIP includes all assets. No PDF, Campaign Wiki dependency, or separate content download is required. Existing world organization, exclusions, custom articles, and House Rules are retained. This private package has no hosted manifest URL.
+
+Parent-path dropdowns use a fixed readable control height so Foundry’s compact global styles cannot clip their selected labels.
 
 ## Navigation and editing
 
@@ -66,4 +68,4 @@ node scripts/build-hierarchy.mjs <optional-original-v7-file>
 node --test test/*.test.mjs
 ```
 
-The workspace browser test is `work/hierarchy-navigation-browser-test.cjs`; reports and screenshots are in `outputs/hero-rulebook-v1.3.1`. For a read-only browser preview, serve the module folder over HTTP and open `reader.html`.
+The workspace browser test is `work/hierarchy-navigation-browser-test.cjs`; reports and screenshots are in `outputs/hero-rulebook-v1.3.2`. For a read-only browser preview, serve the module folder over HTTP and open `reader.html`.
