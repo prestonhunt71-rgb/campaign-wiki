@@ -19,8 +19,8 @@ function button(text, action) {
   const node = element('button', '', text); node.type = 'button'; node.addEventListener('click', action); return node;
 }
 function ruleLink(row, text = row.title) {
-  const link = element('a', '', text);
-  link.href = routeHash(row.route); link.dataset.ruleRoute = row.route;
+  const link = element('button', 'hr-rule-link', text);
+  link.type = 'button'; link.dataset.ruleRoute = row.route;
   link.title = `${row.ancestry.join(' › ')}\n${sourceLabel(row.section)}\n${(row.section.text || '').slice(0, 200)}`;
   return link;
 }
@@ -88,7 +88,7 @@ export async function mountReader(root,{route,adapter,readThrough:initialReadThr
  }
  const imageURL=im=>im.table?new URL(`../${im.src}`,import.meta.url).href:new URL(im.src,location.href).href;
  function imageElement(im,caption){const image=element('img');image.alt=caption||im.caption||'Article image';image.loading='lazy';if(im.src)image.src=imageURL(im);else image.hidden=true;return image;}
- function tiles(rows){const grid=element('div','hr-tiles');for(const row of rows){const tile=ruleLink(row),copy=element('span','hr-tile-copy');tile.className='hr-tile';copy.append(element('strong','',row.title),element('small','',row.customId?'Custom article':sourceLabel(row.section)));const cover=row.images[0];const icon=cover?imageElement(cover,row.title):element('span','hr-tile-icon','§');if(cover){icon.className='hr-tile-thumbnail';icon.addEventListener('error',()=>icon.replaceWith(element('span','hr-tile-icon','§')),{once:true});}tile.replaceChildren(icon,copy);grid.append(tile);}return grid;}
+ function tiles(rows){const grid=element('div','hr-tiles');for(const row of rows){const tile=ruleLink(row),copy=element('span','hr-tile-copy');tile.className='hr-rule-link hr-tile';copy.append(element('strong','',row.title),element('small','',row.customId?'Custom article':sourceLabel(row.section)));const cover=row.images[0];const icon=cover?imageElement(cover,row.title):element('span','hr-tile-icon','§');if(cover){icon.className='hr-tile-thumbnail';icon.addEventListener('error',()=>icon.replaceWith(element('span','hr-tile-icon','§')),{once:true});}tile.replaceChildren(icon,copy);grid.append(tile);}return grid;}
  function parentPicker(form,row,initialParent){
   const area=element('fieldset','hr-parent-picker');area.append(element('legend','','Parent Article Paths'));
   const paths=(row?.parents.length?row.parents.map((p,i)=>{
@@ -168,7 +168,7 @@ export async function mountReader(root,{route,adapter,readThrough:initialReadThr
   if(!current){main.append(element('h1','',index.excluded.has(selected)?'Section excluded':'Article not found'),button('Home',()=>navigate('/rules/home')));return;}
   for(const l of links.get(current.route)||[])l.setAttribute('aria-current','page');
   for(const a of [...current.ancestors,current])for(const d of branches.get(a.route)||[])d.open=true;
-  const crumbs=element('nav','hr-breadcrumbs');crumbs.setAttribute('aria-label','Breadcrumbs');const home=element('a','','Home');home.href=routeHash('/rules/home');home.dataset.ruleRoute='/rules/home';crumbs.append(home);
+  const crumbs=element('nav','hr-breadcrumbs');crumbs.setAttribute('aria-label','Breadcrumbs');const home=element('button','hr-rule-link','Home');home.type='button';home.dataset.ruleRoute='/rules/home';crumbs.append(home);
   for(const a of current.ancestors)crumbs.append(document.createTextNode(' › '),ruleLink(a));crumbs.append(document.createTextNode(' › '+current.title),element('span','hr-visibility','Public'));
   const tools=element('div','hr-reading-tools');tools.append(button(state?.readThrough===false?'Show children':'Show section only',()=>navigate(current.route,state?.readThrough===false)),button('Copy link',()=>run(async()=>{const url=location.href;try{await navigator.clipboard.writeText(url);tools.querySelector('[role=status]').textContent='Copied';}catch{panel('Copy Article Link');const field=textField(main,'Article link',url);field.readOnly=true;backBar();field.select();}})));const status=element('span','hr-meta');status.setAttribute('role','status');tools.append(status);
   main.append(crumbs,tools,article(current));
@@ -176,11 +176,11 @@ export async function mountReader(root,{route,adapter,readThrough:initialReadThr
   const sequence=element('nav','hr-sequence');if(current.previous)sequence.append(ruleLink(current.previous,'← '+current.previous.title));if(current.next)sequence.append(ruleLink(current.next,current.next.title+' →'));main.append(sequence);main.scrollTop=0;if(nav.offsetWidth)links.get(current.route)?.[0]?.scrollIntoView({block:'nearest'});
  }
  function navigate(target,mode=true){history.pushState(null,'',routeHash(target,mode));renderRoute();root.classList.remove('hr-nav-open');main.focus({preventScroll:true});}
- const click=event=>{const link=event.target.closest('a[data-rule-route]');if(!link||event.button!==0||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey)return;event.preventDefault();navigate(link.dataset.ruleRoute);};root.addEventListener('click',click);
+ const click=event=>{const link=event.target.closest('[data-rule-route]');if(!link||!root.contains(link)||event.button>1)return;event.preventDefault();event.stopImmediatePropagation();navigate(link.dataset.ruleRoute);};root.addEventListener('click',click,true);root.addEventListener('auxclick',click,true);const preventAutoScroll=event=>{if(event.button===1&&event.target.closest('[data-rule-route]')){event.preventDefault();event.stopImmediatePropagation();}};root.addEventListener('mousedown',preventAutoScroll,true);
  search.addEventListener('submit',e=>{e.preventDefault();editing=false;main.replaceChildren(element('h1','','Search Results'));const results=searchIndex(index,input.value);main.append(element('p','hr-meta',`${results.length} matching articles`));for(const {row,excerpt} of results){const result=element('article','hr-result');result.append(ruleLink(row),element('p','hr-meta',row.ancestry.join(' › ')),element('p','',excerpt));main.append(result);}root.classList.remove('hr-nav-open');main.scrollTop=0;});
  const key=e=>{if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();input.focus();}};root.addEventListener('keydown',key);
  window.addEventListener('popstate',renderRoute);window.addEventListener('hashchange',renderRoute);
  if(route)history.replaceState(null,'',routeHash(route,initialReadThrough));else if(!currentLocation())history.replaceState(null,'',routeHash('/rules/home'));
  refreshTree();renderRoute();
- return{get index(){return index;},navigate,refresh(state){index=organizedIndex(source,state);refreshTree();if(!editing)renderRoute();},destroy(){disposed=true;window.removeEventListener('popstate',renderRoute);window.removeEventListener('hashchange',renderRoute);root.removeEventListener('click',click);root.removeEventListener('keydown',key);}};
+ return{get index(){return index;},navigate,refresh(state){index=organizedIndex(source,state);refreshTree();if(!editing)renderRoute();},destroy(){disposed=true;window.removeEventListener('popstate',renderRoute);window.removeEventListener('hashchange',renderRoute);root.removeEventListener('click',click,true);root.removeEventListener('auxclick',click,true);root.removeEventListener('mousedown',preventAutoScroll,true);root.removeEventListener('keydown',key);}};
 }

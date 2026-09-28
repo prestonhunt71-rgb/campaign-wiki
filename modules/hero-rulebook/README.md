@@ -1,4 +1,4 @@
-# HERO Rulebook 1.3.0 — Champions Fourth Edition
+# HERO Rulebook 1.3.1 — Champions Fourth Edition
 
 A standalone Foundry VTT 13 rulebook with Campaign Wiki-style navigation and editing. The supplied v7 JSON is preserved byte-for-byte, including all OCR corrections, 630 sections, and 169 retained table images. World customization is stored separately.
 
@@ -14,6 +14,8 @@ The ZIP includes all assets. No PDF, Campaign Wiki dependency, or separate conte
 ## Navigation and editing
 
 The sidebar starts with **Home**. The toolbar has search, **New Article**, and **Edit Article**. Selecting a parent displays its content, child tiles, and child articles beneath it. **Show section only** limits the view to one article.
+
+Rulebook links are in-app navigation controls, so Foundry cannot treat them as external browser links. Sidebar entries, tiles, breadcrumbs, search results, and prose cross-references load content in the existing Rulebook pane.
 
 All navigation, editing, relationship explanations, asset browsing, image enlargement, and deletion confirmation stay in the existing Rulebook window. Save and Cancel return to the article. The normal reader has no Earlier Reader button or pop-up editors.
 
@@ -64,4 +66,4 @@ node scripts/build-hierarchy.mjs <optional-original-v7-file>
 node --test test/*.test.mjs
 ```
 
-The workspace browser test is `work/hierarchy-wiki-browser-test.cjs`; reports and screenshots are in `outputs/hero-rulebook-v1.3.0`. For a read-only browser preview, serve the module folder over HTTP and open `reader.html`.
+The workspace browser test is `work/hierarchy-navigation-browser-test.cjs`; reports and screenshots are in `outputs/hero-rulebook-v1.3.1`. For a read-only browser preview, serve the module folder over HTTP and open `reader.html`.
