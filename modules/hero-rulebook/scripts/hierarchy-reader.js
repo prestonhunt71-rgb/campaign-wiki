@@ -112,17 +112,11 @@ export async function mountReader(root,{route,adapter,readThrough:initialReadThr
  }
  function imagesEditor(form,initial){
   const images=initial.map(im=>({...im})),area=element('fieldset','hr-images-editor'),list=element('div');area.append(element('legend','','Article Images'),list);
-  const browse=async(target,selectFile,host)=>{host.replaceChildren(element('p','','Loading images…'));try{const result=await adapter.browse(target);host.replaceChildren();
-   const pathInput=textField(host,'Folder',result.target||target);host.append(button('Open folder',()=>browse(pathInput.value,selectFile,host)));
-   const up=(result.target||target).replace(/\/?[^/]+\/?$/,'');host.append(button('Parent folder',()=>browse(up,selectFile,host)));
-   for(const folder of result.dirs||[])host.append(button(`📁 ${folder.split('/').at(-1)}`,()=>browse(folder,selectFile,host)));
-   for(const file of result.files||[])if(/\.(webp|png|jpe?g|gif|svg)(?:\?|$)/i.test(file))host.append(button(file.split('/').at(-1),()=>{selectFile(file);host.replaceChildren();render();}));
-  }catch(e){host.replaceChildren();error(e,host);}};
   function render(){list.replaceChildren();images.forEach((im,i)=>{const row=element('div','hr-image-editor-row'),previewImage=imageElement(im,im.caption);previewImage.className='hr-edit-image-preview';previewImage.addEventListener('error',()=>{previewImage.hidden=true;});row.append(previewImage);
    const fields=element('div');const path=textField(fields,`Image ${i+1} path or URL`,im.src),caption=textField(fields,`Image ${i+1} caption`,im.caption);path.addEventListener('input',()=>{im.src=path.value;im.table=false;});caption.addEventListener('input',()=>{im.caption=caption.value;});row.append(fields);
    const actions=element('div','hr-image-actions');const up=button('Move image up',()=>{[images[i-1],images[i]]=[images[i],images[i-1]];render();});up.disabled=i===0;const down=button('Move image down',()=>{[images[i+1],images[i]]=[images[i],images[i+1]];render();});down.disabled=i===images.length-1;
    actions.append(up,down,button('Remove image',()=>{images.splice(i,1);render();}));
-   if(adapter?.browse){const browser=element('div','hr-inline-file-browser');actions.append(button('Browse images',()=>browse('',file=>{im.src=file;im.table=false;},browser)));row.append(browser);}
+   if(adapter?.pickImage)actions.append(button('Browse images',()=>run(()=>adapter.pickImage(im.table?imageURL(im):im.src,file=>{im.src=file;im.table=false;render();}))));
    row.append(actions);list.append(row);
   });}
   area.append(button('+ Add Image',()=>{images.push({id:crypto.randomUUID(),src:'',caption:'',table:false});render();}));form.append(area);render();return()=>images;

@@ -1,3 +1,4 @@
+import {pickArticleImage} from './native-image-picker.js';
 import {mountReader, currentLocation, loadRules} from './hierarchy-reader.js';
 import {changeOrganization, emptyOrganization, organizedIndex} from './hierarchy-organization.js';
 const M='hero-rulebook'; let reader, saveQueue=Promise.resolve();
@@ -37,12 +38,7 @@ class HierarchyReader extends Application {
   async activateListeners(html) {
     super.activateListeners(html);
     this.controller=await mountReader(html[0],{route:this.initialRoute,readThrough:this.initialReadThrough,
-      adapter:{isGM:game.user.isGM,getState:organization,save:saveOrganization,show:showSection,browse:async target=>{
-        if(!game.user.isGM)throw Error('Only the GM may browse image assets.');
-        const Picker=globalThis.FilePicker??globalThis.foundry?.applications?.apps?.FilePicker?.implementation;
-        if(!Picker?.browse)throw Error('Asset browsing is unavailable; enter an image path or URL.');
-        return Picker.browse(globalThis.ForgeVTT?.usingTheForge?'forgevtt':'data',target);
-      }}});
+      adapter:{isGM:game.user.isGM,getState:organization,save:saveOrganization,show:showSection,pickImage:pickArticleImage}});
     this.initialRoute=undefined; this.initialReadThrough=undefined;
   }
   async close(options) {this.controller?.destroy(); return super.close(options);}

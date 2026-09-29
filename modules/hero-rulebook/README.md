@@ -1,4 +1,4 @@
-# HERO Rulebook 1.3.2 — Champions Fourth Edition
+# HERO Rulebook 1.3.3 — Champions Fourth Edition
 
 A standalone Foundry VTT 13 rulebook with Campaign Wiki-style navigation and editing. The supplied v7 JSON is preserved byte-for-byte, including all OCR corrections, 630 sections, and 169 retained table images. World customization is stored separately.
 
@@ -19,13 +19,13 @@ The sidebar starts with **Home**. The toolbar has search, **New Article**, and *
 
 Rulebook links are in-app navigation controls, so Foundry cannot treat them as external browser links. Sidebar entries, tiles, breadcrumbs, search results, and prose cross-references load content in the existing Rulebook pane.
 
-All navigation, editing, relationship explanations, asset browsing, image enlargement, and deletion confirmation stay in the existing Rulebook window. Save and Cancel return to the article. The normal reader has no Earlier Reader button or pop-up editors.
+Article navigation, editing, relationship explanations, image enlargement, and deletion confirmation stay in the existing Rulebook window. **Browse images** opens Foundry’s native image picker, with its existing upload controls, storage sources, permissions, and Forge integrations. This image picker is the requested exception to the in-window workflow. Save and Cancel return to the article. The normal reader has no Earlier Reader button or pop-up editors.
 
 The article editor contains:
 
 - **Article Title** and **Article Text**, editable for both source and custom articles. Display edits are stored separately from the original v7 content.
 - **Parent Article Paths**, using cascading choices like Campaign Wiki. Add multiple paths to place one article beneath several parents. The first parent path supplies the primary breadcrumb. Select Home alone to make an article top-level.
-- **Article Images**, with any number of images. Add paths or HTTP(S) URLs, browse existing Foundry/Forge assets inline, add captions, remove images, and move them up or down. Existing retained tables are included in this list by default. Removing an image changes its display only; source images remain in the package.
+- **Article Images**, with any number of images. Add paths or HTTP(S) URLs, browse or upload images through Foundry’s native picker, add captions, remove images, and move them up or down. Existing retained tables are included in this list by default. Removing an image changes its display only; source images remain in the package.
 
 **New Child Article** creates an article beneath the selected parent. **Explain Relationships** lists its parent paths and children. An article with several parents remains one stored article; editing it updates every placement.
 
@@ -59,7 +59,7 @@ game.modules.get('hero-rulebook').api.open({route: '/rules/powers/entangle'});
 
 ## Validation
 
-145 repository tests pass. Browser checks cover all 630 rendered sections, all 169 decoded table images, launcher icon alignment, multiple parent placements, image addition/removal/reordering, inline asset browsing and enlargement, manual order and persistence, House Rules, authenticated sharing, deletion/restoration, narrow screens, and absence of extra windows. Foundry integration uses a mocked Foundry lifecycle; a live Foundry world was not available for verification.
+148 repository tests pass. Browser checks cover all 630 rendered sections, all 169 decoded table images, launcher icon alignment, multiple parent placements, image addition/removal/reordering, native image-picker integration and inline enlargement, manual order and persistence, House Rules, authenticated sharing, deletion/restoration, narrow screens, and absence of extra windows. Foundry integration uses a mocked Foundry lifecycle; a live Foundry world was not available for verification.
 
 From the repository root:
 
@@ -68,4 +68,4 @@ node scripts/build-hierarchy.mjs <optional-original-v7-file>
 node --test test/*.test.mjs
 ```
 
-The workspace browser test is `work/hierarchy-navigation-browser-test.cjs`; reports and screenshots are in `outputs/hero-rulebook-v1.3.2`. For a read-only browser preview, serve the module folder over HTTP and open `reader.html`.
+The workspace browser test is `work/hierarchy-native-picker-browser-test.cjs`; reports and screenshots are in `outputs/hero-rulebook-v1.3.3`. For a read-only browser preview, serve the module folder over HTTP and open `reader.html`.
