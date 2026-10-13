@@ -8,6 +8,12 @@ export const ROOT_IDS=new Set(ROOTS.map(root=>root.id));
 export const VISIBILITY=Object.freeze({AUTOMATIC:"automatic",PUBLIC:"always-public",GM:"always-gm"});
 const clone=value=>globalThis.structuredClone?structuredClone(value):JSON.parse(JSON.stringify(value));
 const clean=value=>String(value??"").trim();
+export function normalizePastedArticleText(value,{recoverFlattened=true}={}){
+  const text=String(value??"").replace(/\r\n?/g,"\n").replace(/[\u2028\u2029]/g,"\n");
+  if(text.includes("\n"))return text;
+  const paragraphGaps=text.match(/[\t ]{2,}/g)??[];
+  return recoverFlattened&&text.length>=200&&paragraphGaps.length>=3?text.replace(/[\t ]{2,}/g,"\n\n"):text;
+}
 const unique=value=>[...new Set((Array.isArray(value)?value:[]).filter(Boolean))];
 export const makeArticleId=()=>`article-${globalThis.crypto?.randomUUID?.()??`${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`}`;
 export const emptyUnifiedDatabase=(worldId="")=>({schemaVersion:UNIFIED_SCHEMA_VERSION,worldId:clean(worldId),createdAt:new Date().toISOString(),articles:{},resolutions:{},migration:null});

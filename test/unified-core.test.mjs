@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,pathRuleState,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,resolveMissingSource,sidebarPickerAllows,sourceRecoveryInventory,validateUnified} from "../scripts/unified-core.js";
+import {VISIBILITY,articlePaths,derivedDateRange,emptyUnifiedDatabase,isPublic,linkArticleText,migrateV2,needsActioning,normalizePastedArticleText,pathRuleState,preferredPathTo,putArticle,relatedArticleIdsWithin,relationshipDiagnostics,resolveMissingSource,sidebarPickerAllows,sourceRecoveryInventory,validateUnified} from "../scripts/unified-core.js";
 
 test("one Article can appear beneath multiple parents without duplication",()=>{
   const db=emptyUnifiedDatabase("test");
@@ -58,6 +58,17 @@ test("Article text treats pasted non-breaking spaces as ordinary alias spacing",
   const db=emptyUnifiedDatabase("test"),source=putArticle(db,{id:"source",title:"Session",parentIds:["root:arcs"],text:"Baron\u00a0von Hammersmark entered."}),baron=putArticle(db,{id:"baron",title:"Baron Helmut von Hammersmark",aliases:["von Hammersmark","Baron von Hammersmark"],parentIds:["root:people"]});
   const linked=linkArticleText(db,source,[baron.id]);
   assert.match(linked.html,/data-id="baron">Baron\u00a0von Hammersmark<\/button> entered\./);assert.doesNotMatch(linked.html,/Baron\u00a0<button/);
+});
+
+test("pasted Article text preserves and normalizes every common line separator",()=>{
+  assert.equal(normalizePastedArticleText("First\r\n\r\nSecond\rThird\u2028Fourth\u2029Fifth"),"First\n\nSecond\nThird\nFourth\nFifth");
+});
+
+test("long flattened clipboard text recovers paragraph gaps without changing ordinary prose",()=>{
+  const paragraph="A sufficiently long paragraph copied from a rich-text source can arrive without newline characters in the plain-text clipboard representation.";
+  assert.equal(normalizePastedArticleText(`${paragraph}  Overview  ${paragraph}  ${paragraph}`),`${paragraph}\n\nOverview\n\n${paragraph}\n\n${paragraph}`);
+  assert.equal(normalizePastedArticleText(`${paragraph}  Overview  ${paragraph}  ${paragraph}`,{recoverFlattened:false}),`${paragraph}  Overview  ${paragraph}  ${paragraph}`);
+  assert.equal(normalizePastedArticleText("A short sentence.  Another short sentence."),"A short sentence.  Another short sentence.");
 });
 
 test("player Article text never links a hidden related Article",()=>{
